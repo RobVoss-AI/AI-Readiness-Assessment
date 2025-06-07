@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Readiness Assessment | Voss AI Consulting</title>
+    <meta name="description" content="Complete your personalized AI readiness assessment and get actionable insights">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="security-utils.js"></script>
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        .question-card {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 0.75rem;
+            border-left: 4px solid #00BFA5;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .likert-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .likert-option {
+            padding: 0.75rem 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            border: 2px solid #e5e7eb;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-align: center;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9fafb;
+        }
+        
+        .likert-option:hover {
+            background-color: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-2px);
+        }
+        
+        .likert-option.selected {
+            background-color: #00BFA5;
+            border-color: #00BFA5;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            color: white;
+            background-color: #00BFA5;
+        }
+        
+        .btn-primary:hover {
+            background-color: #009B8D;
+        }
+        
+        .btn-outline {
+            color: #374151;
+            background-color: white;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-outline:hover {
+            background-color: #f9fafb;
+        }
+        
+        .progress-bar {
+            height: 0.5rem;
+            border-radius: 9999px;
+            background-color: #00BFA5;
+            transition: all 0.3s;
+        }
+        
+        /* Mobile menu functionality */
+        .mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header with Branding -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="display: none;">
+                        <span class="text-white font-bold text-lg">V</span>
+                    </div>
+                    <div class="ml-3">
+                        <div class="text-xl font-bold text-gray-900">VossAIConsulting</div>
+                        <div class="text-xs text-gray-500 -mt-1">AI Readiness Assessment</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="restartButton" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
+                        ↻ Restart Assessment
+                    </button>
+                    <a href="VossAIOpportunityScorecard.html" class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                        ← Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="min-h-screen py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-3xl mx-auto">
+                
+                <!-- Progress bar -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700" id="sectionInfo">Section 1 of 6</span>
+                        <span class="text-sm font-medium text-gray-700" id="progressPercent">0% Complete</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-200 rounded-full">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Section header -->
+                <div class="mb-8 text-center">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2" id="sectionTitle">AI Strategy & Vision</h1>
+                    <p class="text-gray-600" id="sectionDescription">Assess your organization's strategic approach to AI adoption</p>
+                </div>
+                
+                <!-- Questions container -->
+                <div class="bg-white rounded-lg shadow-md p-6 md:p-8">
+                    <div id="questionsContainer">
+                        <!-- Questions will be generated here -->
+                    </div>
+                    
+                    <!-- Navigation -->
+                    <div class="flex justify-between mt-8">
+                        <button type="button" id="prevButton" class="btn btn-outline" disabled>← Previous</button>
+                        <button type="button" id="nextButton" class="btn btn-primary">Next Section →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg mr-3" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mr-3" style="display: none;">
+                            <span class="text-white font-bold text-lg">V</span>
+                        </div>
+                        <div>
+                            <div class="text-xl font-bold">VossAIConsulting</div>
+                            <div class="text-sm text-gray-400">Empowering Organizations with Strategic AI Implementation</div>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Led by Dr. Robert Voss, we bridge academic insight with business AI innovation. Specializing in AI readiness assessments, strategic planning, and implementation support for organizations ready to transform with AI.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://x.com/ai_voss53755" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/ai-robvoss" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="mailto:robvoss@vossaiconsulting.com" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2L3 7v10c0 5.55 3.84 9.95 9 9.95s9-4.4 9-9.95V7l-9-5zm0 2.5l6.5 3.5-6.5 3.5L5.5 8 12 4.5zM5 9.18l7 3.82 7-3.82V17c0 4.52-3.48 7.95-7 7.95S5 21.52 5 17V9.18z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-3">
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Assessment & Planning</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Speaking Engagements</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Implementation Support</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Fractional CTO</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <ul class="space-y-3">
+                        <li><a href="mailto:robvoss@vossaiconsulting.com" class="text-gray-400 hover:text-white transition-colors">robvoss@vossaiconsulting.com</a></li>
+                        <li><a href="tel:660-215-1313" class="text-gray-400 hover:text-white transition-colors">660-215-1313</a></li>
+                        <li><a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-gray-400 hover:text-white transition-colors">Schedule Consultation</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Visit Website</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 text-sm">
+                        &copy; <span id="currentYear"></span> VossAIConsulting. All rights reserved.
+                    </p>
+                    <p class="text-gray-400 text-sm mt-4 md:mt-0">
+                        Bridging Academic Insight with Business AI Innovation
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Storage utility
+        function safeLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return {
+                    getItem: (key) => localStorage.getItem(key),
+                    setItem: (key, value) => localStorage.setItem(key, value)
+                };
+            } catch (e) {
+                const memoryStorage = {};
+                return {
+                    getItem: (key) => memoryStorage[key] || null,
+                    setItem: (key, value) => { memoryStorage[key] = value; }
+                };
+            }
+        }
+        
+        const storage = safeLocalStorage();
+        let answers = {};
+        let currentSection = 0;
+        
+        // Assessment sections with comprehensive questions
+        const sections = [
+            {
+                id: 'strategy',
+                title: 'AI Strategy & Vision',
+                description: 'Assess your organization\'s strategic approach to AI adoption',
+                questions: [
+                    { id: 'strategy_vision', text: 'Our organization has a clear, documented vision for how AI will create business value' },
+                    { id: 'strategy_problems', text: 'We have identified specific, measurable business problems that AI could help solve' },
+                    { id: 'strategy_leadership', text: 'Our leadership team actively champions and supports AI initiatives' },
+                    { id: 'strategy_budget', text: 'We have allocated appropriate budget and resources for AI implementation' },
+                    { id: 'strategy_culture', text: 'Our organization has a culture that embraces innovation and technological change' },
+                    { id: 'strategy_open', text: 'What is your biggest strategic challenge or opportunity when it comes to AI adoption?', type: 'textarea' }
+                ]
+            },
+            {
+                id: 'operations',
+                title: 'Operational Readiness',
+                description: 'Evaluate how well your operations can integrate AI solutions',
+                questions: [
+                    { id: 'ops_process_mapping', text: 'We have documented and mapped our key business processes in detail' },
+                    { id: 'ops_automation_candidates', text: 'We have identified repetitive, rule-based tasks that could be automated' },
+                    { id: 'ops_change_readiness', text: 'Our operational teams are receptive to process changes enabled by AI' },
+                    { id: 'ops_efficiency_measurement', text: 'We have clear metrics to measure operational efficiency improvements' },
+                    { id: 'ops_open', text: 'What specific operational processes or tasks would you most like to improve with AI?', type: 'textarea' }
+                ]
+            },
+            {
+                id: 'technology',
+                title: 'Technology Infrastructure',
+                description: 'Assess your technical readiness for AI implementation',
+                questions: [
+                    { id: 'tech_infrastructure', text: 'Our current IT infrastructure can support AI applications and workloads' },
+                    { id: 'tech_cloud_experience', text: 'We have experience with cloud computing platforms and services' },
+                    { id: 'tech_data_systems', text: 'Our data systems are well-integrated and accessible for AI applications' },
+                    { id: 'tech_security', text: 'We have robust cybersecurity measures in place for AI systems' },
+                    { id: 'tech_open', text: 'What are your biggest technology concerns or gaps when it comes to implementing AI?', type: 'textarea' }
+                ]
+            },
+            {
+                id: 'data',
+                title: 'Data Quality & Governance',
+                description: 'Evaluate your data readiness for AI applications',
+                questions: [
+                    { id: 'data_quality', text: 'We have high-quality, well-structured data available for AI projects' },
+                    { id: 'data_accessibility', text: 'Our data is well-organized and easily accessible to relevant teams' },
+                    { id: 'data_governance', text: 'We have strong data governance policies and procedures in place' },
+                    { id: 'data_privacy', text: 'We have clear data privacy and compliance frameworks established' },
+                    { id: 'data_open', text: 'What data challenges or opportunities do you see for AI implementation in your organization?', type: 'textarea' }
+                ]
+            },
+            {
+                id: 'culture',
+                title: 'Organizational Culture',
+                description: 'Assess cultural readiness for AI adoption and change',
+                questions: [
+                    { id: 'culture_enthusiasm', text: 'Our employees are generally enthusiastic about AI adoption and its potential' },
+                    { id: 'culture_change_embrace', text: 'We have a culture that embraces and adapts well to technological change' },
+                    { id: 'culture_learning', text: 'Our organization prioritizes continuous learning and skill development' },
+                    { id: 'culture_collaboration', text: 'We foster collaboration between technical and business teams' },
+                    { id: 'culture_open', text: 'What do you imagine AI could do for your organization?', type: 'textarea' }
+                ]
+            },
+            {
+                id: 'automation',
+                title: 'Automation Readiness',
+                description: 'Identify current automation experience and opportunities',
+                questions: [
+                    { id: 'auto_current_state', text: 'We have already implemented some form of process automation' },
+                    { id: 'auto_employee_understanding', text: 'Our employees understand how automation enhances rather than replaces their work' },
+                    { id: 'auto_tools_experience', text: 'We have experience with automation tools and technologies' },
+                    { id: 'auto_roi_measurement', text: 'We can measure and demonstrate ROI from automation initiatives' },
+                    { id: 'auto_open', text: 'What would be your ideal first automation project or AI use case?', type: 'textarea' }
+                ]
+            }
+        ];
+        
+        // Clear any existing answers to start fresh
+        answers = {};
+        storage.setItem("voss_answers", "{}");
+        storage.setItem("voss_scores", "{}");
+        
+        // Select answer function
+        function selectAnswer(questionId, value) {
+            // Sanitize text inputs
+            if (typeof value === 'string') {
+                value = SecurityUtils.sanitizeText(value);
+            }
+            
+            answers[questionId] = value;
+            storage.setItem("voss_answers", JSON.stringify(answers));
+            
+            // Update UI
+            const questionCard = document.querySelector(`[data-question-id="${questionId}"]`);
+            if (questionCard) {
+                questionCard.querySelectorAll('.likert-option').forEach(btn => btn.classList.remove('selected'));
+                const selectedButton = questionCard.querySelector(`[data-value="${value}"]`);
+                if (selectedButton) selectedButton.classList.add('selected');
+            }
+            
+            updateProgress();
+        }
+        
+        // Event delegation for button clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('likert-option') || e.target.parentNode.classList.contains('likert-option')) {
+                const button = e.target.classList.contains('likert-option') ? e.target : e.target.parentNode;
+                const questionCard = button.closest('.question-card');
+                if (!questionCard) return;
+                
+                const questionId = questionCard.getAttribute('data-question-id');
+                const value = parseInt(button.getAttribute('data-value'));
+                
+                if (questionId && !isNaN(value)) {
+                    selectAnswer(questionId, value);
+                }
+            }
+        });
+        
+        // Event delegation for textarea inputs
+        document.addEventListener('input', function(e) {
+            if (e.target.tagName === 'TEXTAREA' && e.target.hasAttribute('data-question-id')) {
+                const questionId = e.target.getAttribute('data-question-id');
+                const value = e.target.value.trim();
+                
+                if (questionId) {
+                    selectAnswer(questionId, value);
+                }
+            }
+        });
+        
+        // Update progress
+        function updateProgress() {
+            const section = sections[currentSection];
+            // Only count Likert scale questions for progress/validation (not textarea questions)
+            const likertQuestions = section.questions.filter(q => q.type !== 'textarea');
+            const answeredQuestions = likertQuestions.filter(q => answers[q.id] !== undefined).length;
+            const sectionProgress = (currentSection + (answeredQuestions / likertQuestions.length)) / sections.length;
+            const progressPercent = Math.round(sectionProgress * 100);
+            
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+            document.getElementById('progressPercent').textContent = progressPercent + '% Complete';
+            document.getElementById('sectionInfo').textContent = `Section ${currentSection + 1} of ${sections.length}`;
+            
+            // Update buttons
+            document.getElementById('prevButton').disabled = currentSection === 0;
+            const nextButton = document.getElementById('nextButton');
+            
+            // Show how many Likert questions are answered in current section
+            const allAnswered = answeredQuestions === likertQuestions.length;
+            if (allAnswered) {
+                nextButton.textContent = currentSection === sections.length - 1 ? 'See Results →' : 'Next Section →';
+                nextButton.disabled = false;
+            } else {
+                nextButton.textContent = `Answer Required Questions (${answeredQuestions}/${likertQuestions.length})`;
+                nextButton.disabled = false; // Allow clicking to show validation message
+            }
+        }
+        
+        // Render section
+        function renderSection() {
+            const section = sections[currentSection];
+            
+            // Update header
+            document.getElementById('sectionTitle').textContent = section.title;
+            document.getElementById('sectionDescription').textContent = section.description;
+            
+            // Build questions HTML
+            let questionsHTML = '';
+            section.questions.forEach((question, index) => {
+                const isSelected = answers[question.id];
+                
+                questionsHTML += `
+                    <div class="question-card" data-question-id="${question.id}">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            <span class="text-blue-600 font-bold">${index + 1}.</span> 
+                            ${question.text}
+                            ${question.type === 'textarea' ? '<span class="text-gray-500 ml-1">(Optional)</span>' : '<span class="text-red-500 ml-1">*</span>'}
+                        </h3>
+                `;
+                
+                if (question.type === 'textarea') {
+                    // Open-ended text question - sanitize text content
+                    const textValue = (answers[question.id] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    questionsHTML += `
+                        <textarea 
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical" 
+                            rows="4" 
+                            placeholder="Share your thoughts..."
+                            data-question-id="${question.id}"
+                        >${textValue}</textarea>
+                    `;
+                } else {
+                    // Likert scale question
+                    questionsHTML += '<div class="likert-container">';
+                    const labels = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+                    for (let j = 0; j < 5; j++) {
+                        const selected = isSelected === j ? ' selected' : '';
+                        questionsHTML += `
+                            <button type="button" class="likert-option${selected}" data-value="${j}">
+                                <div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">${j + 1}</div>
+                                <div style="font-size: 0.65rem; line-height: 1.1; font-weight: 500;">${labels[j]}</div>
+                            </button>
+                        `;
+                    }
+                    questionsHTML += '</div>';
+                }
+                
+                questionsHTML += '</div>';
+            });
+            
+            document.getElementById('questionsContainer').innerHTML = questionsHTML;
+            updateProgress();
+        }
+        
+        // Navigation handlers
+        document.getElementById('nextButton').addEventListener('click', function() {
+            // Check if all required (Likert scale) questions in current section are answered
+            const section = sections[currentSection];
+            const likertQuestions = section.questions.filter(q => q.type !== 'textarea');
+            const unansweredQuestions = likertQuestions.filter(q => answers[q.id] === undefined);
+            
+            if (unansweredQuestions.length > 0) {
+                alert(`Please answer all ${likertQuestions.length} required questions before proceeding to the next section. (Open-ended questions are optional)`);
+                // Scroll to first unanswered question
+                const firstUnanswered = document.querySelector(`[data-question-id="${unansweredQuestions[0].id}"]`);
+                if (firstUnanswered) {
+                    firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstUnanswered.style.border = '2px solid #ef4444';
+                    setTimeout(() => {
+                        firstUnanswered.style.border = '';
+                    }, 3000);
+                }
+                return;
+            }
+            
+            // Calculate section score
+            let sectionScore = 0;
+            let answeredQuestions = 0;
+            
+            section.questions.forEach(question => {
+                if (question.type !== 'textarea' && answers[question.id] !== undefined) {
+                    sectionScore += (answers[question.id] / 4) * 100;
+                    answeredQuestions++;
+                }
+                // Note: Textarea questions don't contribute to scoring
+            });
+            
+            const avgScore = answeredQuestions > 0 ? Math.round(sectionScore / answeredQuestions) : 0;
+            
+            // Save scores
+            const scores = JSON.parse(storage.getItem("voss_scores") || "{}");
+            scores[section.id] = avgScore;
+            storage.setItem("voss_scores", JSON.stringify(scores));
+            storage.setItem("voss_answers", JSON.stringify(answers));
+            
+            // Navigate
+            if (currentSection < sections.length - 1) {
+                currentSection++;
+                renderSection();
+                window.scrollTo(0, 0);
+            } else {
+                // Redirect to results
+                window.location.href = "results-new.html";
+            }
+        });
+        
+        document.getElementById('prevButton').addEventListener('click', function() {
+            if (currentSection > 0) {
+                currentSection--;
+                renderSection();
+                window.scrollTo(0, 0);
+            }
+        });
+        
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Restart functionality
+        document.getElementById('restartButton').addEventListener('click', function() {
+            if (confirm('Are you sure you want to restart the assessment? All your current answers will be lost.')) {
+                // Clear all stored data
+                storage.setItem('voss_answers', '{}');
+                storage.setItem('voss_scores', '{}');
+                
+                // Reset to first section
+                currentSection = 0;
+                answers = {};
+                
+                // Re-render the first section
+                renderSection();
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
+                
+                // Optional: Show confirmation
+                const restartBtn = document.getElementById('restartButton');
+                const originalText = restartBtn.textContent;
+                restartBtn.textContent = '✓ Restarted';
+                restartBtn.classList.add('text-green-600');
+                
+                setTimeout(() => {
+                    restartBtn.textContent = originalText;
+                    restartBtn.classList.remove('text-green-600');
+                    restartBtn.classList.add('text-blue-600');
+                }, 2000);
+            }
+        });
+        
+        // Initialize
+        renderSection();
+    </script>
+</body>
+</html>

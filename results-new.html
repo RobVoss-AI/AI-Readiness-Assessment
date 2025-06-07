@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your AI Readiness Results | Voss AI Consulting</title>
+    <meta name="description" content="Your personalized AI readiness assessment results with actionable insights and recommendations">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="security-utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .score-card {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        
+        .score-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .insight-card {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border-left: 4px solid;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .insight-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .strength { border-color: #10b981; background-color: #ecfdf5; }
+        .weakness { border-color: #ef4444; background-color: #fef2f2; }
+        .opportunity { border-color: #3b82f6; background-color: #eff6ff; }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            color: white;
+            background-color: #00BFA5;
+        }
+        
+        .btn-primary:hover {
+            background-color: #009B8D;
+            transform: translateY(-1px);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header with Branding -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="display: none;">
+                        <span class="text-white font-bold text-lg">V</span>
+                    </div>
+                    <div class="ml-3">
+                        <div class="text-xl font-bold text-gray-900">VossAIConsulting</div>
+                        <div class="text-xs text-gray-500 -mt-1">AI Readiness Results</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="assessment-clean.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
+                        ↻ Retake Assessment
+                    </a>
+                    <a href="VossAIOpportunityScorecard.html" class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                        ← Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="min-h-screen py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl font-bold text-gray-900 mb-4">Your AI Readiness Results</h1>
+                    <p class="text-xl text-gray-600" id="userGreeting">Here's your personalized AI readiness assessment</p>
+                </div>
+                
+                <!-- Overall Score -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-8 text-center">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Overall AI Readiness Score</h2>
+                    <div class="text-6xl font-bold text-blue-600 mb-2" id="overallScore">0%</div>
+                    <div class="text-lg text-gray-600" id="readinessLevel">Calculating...</div>
+                    <div class="mt-4 w-full bg-gray-200 rounded-full h-3">
+                        <div class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-1000" id="overallProgressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Charts and Scores -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    
+                    <!-- Radar Chart -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">AI Readiness Radar</h3>
+                        <div class="chart-container">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Section Scores -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Section Breakdown</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="score-card bg-blue-100">
+                                <h4 class="text-sm font-medium text-blue-800 mb-1">Strategy</h4>
+                                <p class="text-2xl font-bold text-blue-900" id="strategyScore">0%</p>
+                            </div>
+                            <div class="score-card bg-green-100">
+                                <h4 class="text-sm font-medium text-green-800 mb-1">Operations</h4>
+                                <p class="text-2xl font-bold text-green-900" id="operationsScore">0%</p>
+                            </div>
+                            <div class="score-card bg-purple-100">
+                                <h4 class="text-sm font-medium text-purple-800 mb-1">Technology</h4>
+                                <p class="text-2xl font-bold text-purple-900" id="technologyScore">0%</p>
+                            </div>
+                            <div class="score-card bg-yellow-100">
+                                <h4 class="text-sm font-medium text-yellow-800 mb-1">Data</h4>
+                                <p class="text-2xl font-bold text-yellow-900" id="dataScore">0%</p>
+                            </div>
+                            <div class="score-card bg-red-100">
+                                <h4 class="text-sm font-medium text-red-800 mb-1">Culture</h4>
+                                <p class="text-2xl font-bold text-red-900" id="cultureScore">0%</p>
+                            </div>
+                            <div class="score-card bg-indigo-100">
+                                <h4 class="text-sm font-medium text-indigo-800 mb-1">Automation</h4>
+                                <p class="text-2xl font-bold text-indigo-900" id="automationScore">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Insights -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Personalized Insights</h2>
+                    <div id="dynamicInsights">
+                        <!-- Insights will be generated here -->
+                    </div>
+                </div>
+                
+                <!-- Action Plan -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your AI Action Plan</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="actionPlan">
+                        <!-- Action items will be generated here -->
+                    </div>
+                </div>
+                
+                <!-- Next Steps -->
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 text-white text-center">
+                    <h2 class="text-2xl font-semibold mb-4">Ready to Accelerate Your AI Journey?</h2>
+                    <p class="text-lg mb-6">Get expert guidance tailored to your specific needs and industry</p>
+                    <div class="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+                        <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="btn btn-primary">
+                            Schedule Free Consultation
+                        </a>
+                        <a href="assessment-clean.html" class="btn bg-white text-blue-600 hover:bg-gray-100">
+                            Retake Assessment
+                        </a>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg mr-3" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mr-3" style="display: none;">
+                            <span class="text-white font-bold text-lg">V</span>
+                        </div>
+                        <div>
+                            <div class="text-xl font-bold">VossAIConsulting</div>
+                            <div class="text-sm text-gray-400">Empowering Organizations with Strategic AI Implementation</div>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Led by Dr. Robert Voss, we bridge academic insight with business AI innovation. Specializing in AI readiness assessments, strategic planning, and implementation support for organizations ready to transform with AI.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://x.com/ai_voss53755" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/ai-robvoss" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="mailto:robvoss@vossaiconsulting.com" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2L3 7v10c0 5.55 3.84 9.95 9 9.95s9-4.4 9-9.95V7l-9-5zm0 2.5l6.5 3.5-6.5 3.5L5.5 8 12 4.5zM5 9.18l7 3.82 7-3.82V17c0 4.52-3.48 7.95-7 7.95S5 21.52 5 17V9.18z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-3">
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Assessment & Planning</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Speaking Engagements</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Implementation Support</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Fractional CTO</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <ul class="space-y-3">
+                        <li><a href="mailto:robvoss@vossaiconsulting.com" class="text-gray-400 hover:text-white transition-colors">robvoss@vossaiconsulting.com</a></li>
+                        <li><a href="tel:660-215-1313" class="text-gray-400 hover:text-white transition-colors">660-215-1313</a></li>
+                        <li><a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-gray-400 hover:text-white transition-colors">Schedule Consultation</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Visit Website</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 text-sm">
+                        &copy; <span id="currentYear"></span> VossAIConsulting. All rights reserved.
+                    </p>
+                    <p class="text-gray-400 text-sm mt-4 md:mt-0">
+                        Bridging Academic Insight with Business AI Innovation
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        console.log('🟢 Results-new.html JavaScript loaded and running');
+        
+        // Storage utility
+        function safeLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return {
+                    getItem: (key) => localStorage.getItem(key),
+                    setItem: (key, value) => localStorage.setItem(key, value)
+                };
+            } catch (e) {
+                const memoryStorage = {};
+                return {
+                    getItem: (key) => memoryStorage[key] || null,
+                    setItem: (key, value) => { memoryStorage[key] = value; }
+                };
+            }
+        }
+        
+        const storage = safeLocalStorage();
+        
+        // Load data
+        let userData = null;
+        let scores = null;
+        
+        try {
+            userData = JSON.parse(storage.getItem("voss_user") || "null");
+            scores = JSON.parse(storage.getItem("voss_scores") || "null");
+        } catch (e) {
+            console.error('Error parsing data:', e);
+        }
+        
+        // Fallback data if needed
+        if (!userData) {
+            userData = {
+                firstName: 'User',
+                email: 'user@example.com',
+                industry: 'Technology',
+                jobTitle: 'Manager',
+                role: 'Manager'
+            };
+        }
+        
+        if (!scores) {
+            // Try to reconstruct from answers
+            const answers = JSON.parse(storage.getItem("voss_answers") || "{}");
+            if (Object.keys(answers).length > 0) {
+                scores = reconstructScores(answers);
+            } else {
+                // Demo scores
+                scores = {
+                    strategy: 75,
+                    operations: 68,
+                    technology: 82,
+                    data: 60,
+                    culture: 78,
+                    automation: 65
+                };
+            }
+        }
+        
+        // Reconstruct scores from answers
+        function reconstructScores(answers) {
+            const sections = {
+                strategy: ['strategy_vision', 'strategy_problems', 'strategy_leadership', 'strategy_budget', 'strategy_culture'],
+                operations: ['ops_process_mapping', 'ops_automation_candidates', 'ops_change_readiness', 'ops_efficiency_measurement'],
+                technology: ['tech_infrastructure', 'tech_cloud_experience', 'tech_data_systems', 'tech_security'],
+                data: ['data_quality', 'data_accessibility', 'data_governance', 'data_privacy'],
+                culture: ['culture_enthusiasm', 'culture_change_embrace', 'culture_learning', 'culture_collaboration'],
+                automation: ['auto_current_state', 'auto_employee_understanding', 'auto_tools_experience', 'auto_roi_measurement']
+            };
+            
+            const reconstructed = {};
+            
+            Object.keys(sections).forEach(sectionId => {
+                let total = 0;
+                let count = 0;
+                
+                sections[sectionId].forEach(questionId => {
+                    if (answers[questionId] !== undefined) {
+                        total += (answers[questionId] / 4) * 100;
+                        count++;
+                    } else {
+                        total += 50; // Default neutral
+                        count++;
+                    }
+                });
+                
+                reconstructed[sectionId] = count > 0 ? Math.round(total / count) : 50;
+            });
+            
+            return reconstructed;
+        }
+        
+        // Display scores
+        const strategyScore = scores.strategy || 0;
+        const operationsScore = scores.operations || 0;
+        const technologyScore = scores.technology || 0;
+        const dataScore = scores.data || 0;
+        const cultureScore = scores.culture || 0;
+        const automationScore = scores.automation || 0;
+        
+        document.getElementById("strategyScore").textContent = `${strategyScore}%`;
+        document.getElementById("operationsScore").textContent = `${operationsScore}%`;
+        document.getElementById("technologyScore").textContent = `${technologyScore}%`;
+        document.getElementById("dataScore").textContent = `${dataScore}%`;
+        document.getElementById("cultureScore").textContent = `${cultureScore}%`;
+        document.getElementById("automationScore").textContent = `${automationScore}%`;
+        
+        // Calculate overall score
+        const overallScore = Math.round(
+            (strategyScore + operationsScore + technologyScore + dataScore + cultureScore + automationScore) / 6
+        );
+        
+        // Update overall score with animation
+        let currentScore = 0;
+        const targetScore = overallScore;
+        const scoreElement = document.getElementById("overallScore");
+        const progressBar = document.getElementById("overallProgressBar");
+        
+        const animateScore = () => {
+            const increment = targetScore / 60; // 1 second animation at 60fps
+            if (currentScore < targetScore) {
+                currentScore += increment;
+                scoreElement.textContent = `${Math.round(currentScore)}%`;
+                progressBar.style.width = `${Math.round(currentScore)}%`;
+                requestAnimationFrame(animateScore);
+            } else {
+                scoreElement.textContent = `${targetScore}%`;
+                progressBar.style.width = `${targetScore}%`;
+            }
+        };
+        
+        setTimeout(animateScore, 500);
+        
+        // Update readiness level
+        let readinessLevel = 'Beginning';
+        let levelColor = 'text-red-600';
+        if (overallScore >= 80) {
+            readinessLevel = 'Advanced';
+            levelColor = 'text-green-600';
+        } else if (overallScore >= 60) {
+            readinessLevel = 'Intermediate';
+            levelColor = 'text-blue-600';
+        } else if (overallScore >= 40) {
+            readinessLevel = 'Developing';
+            levelColor = 'text-yellow-600';
+        }
+        
+        const levelElement = document.getElementById("readinessLevel");
+        levelElement.textContent = `${readinessLevel} Level`;
+        levelElement.className = `text-lg ${levelColor}`;
+        
+        // Update greeting
+        document.getElementById("userGreeting").textContent = 
+            `Hello ${userData.firstName}! Here's your personalized AI readiness assessment.`;
+        
+        // Send results to Google Sheets
+        async function sendResultsToGoogleSheets() {
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvfFMWKg81dAZEIO41_GmB724eCpraCBYjloziHye_9Aun-Jn7xBuf2L5QmgzfQu-j/exec";
+            
+            console.log('🚀 Attempting to send results to Google Sheets...');
+            console.log('User data:', userData);
+            console.log('Scores:', { strategy: strategyScore, operations: operationsScore, technology: technologyScore, data: dataScore, culture: cultureScore, automation: automationScore });
+            
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Required for Google Apps Script
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(SecurityUtils.sanitizeForGoogleSheets({
+                        type: 'assessment_results',
+                        user: userData,
+                        scores: {
+                            strategy: strategyScore,
+                            operations: operationsScore,
+                            technology: technologyScore,
+                            data: dataScore,
+                            culture: cultureScore,
+                            automation: automationScore
+                        },
+                        overallScore: overallScore,
+                        readinessLevel: readinessLevel,
+                        tier: 'free',
+                        timestamp: new Date().toISOString()
+                    }))
+                });
+                
+                console.log('✅ Assessment results sent to Google Sheets successfully');
+                console.log('Response status:', response.status);
+                return true;
+            } catch (error) {
+                console.error('❌ Error sending results to Google Sheets:', error);
+                return false;
+            }
+        }
+        
+        // Send results when page loads
+        console.log('🔄 Results page loaded, about to call sendResultsToGoogleSheets...');
+        sendResultsToGoogleSheets();
+        
+        // Create radar chart
+        function createRadarChart() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Strategy', 'Operations', 'Technology', 'Data', 'Culture', 'Automation'],
+                    datasets: [{
+                        label: 'Your AI Readiness',
+                        data: [strategyScore, operationsScore, technologyScore, dataScore, cultureScore, automationScore],
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 14 }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            min: 0,
+                            ticks: {
+                                stepSize: 20,
+                                font: { size: 12 }
+                            },
+                            pointLabels: {
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+        
+        // Generate dynamic insights
+        function generateInsights() {
+            const sectionScores = {
+                'Strategy': strategyScore,
+                'Operations': operationsScore,
+                'Technology': technologyScore,
+                'Data': dataScore,
+                'Culture': cultureScore,
+                'Automation': automationScore
+            };
+            
+            const sortedSections = Object.entries(sectionScores).sort(([,a], [,b]) => b - a);
+            const strongest = sortedSections[0];
+            const weakest = sortedSections[sortedSections.length - 1];
+            
+            const insights = [];
+            
+            // Strength insight
+            insights.push({
+                type: 'strength',
+                icon: '💪',
+                title: `Strong ${strongest[0]} Foundation`,
+                description: `Your ${strongest[0].toLowerCase()} readiness score of ${strongest[1]}% indicates a solid foundation in this area. This strength can be leveraged to accelerate AI adoption in other domains.`
+            });
+            
+            // Weakness insight
+            insights.push({
+                type: 'weakness',
+                icon: '⚠️',
+                title: `${weakest[0]} Needs Attention`,
+                description: `Your ${weakest[0].toLowerCase()} score of ${weakest[1]}% suggests this area requires focused improvement to support successful AI implementation.`
+            });
+            
+            // Overall insight
+            let overallInsight;
+            if (overallScore >= 70) {
+                overallInsight = {
+                    type: 'opportunity',
+                    icon: '🎯',
+                    title: 'Well-Positioned for AI Success',
+                    description: `With an overall readiness score of ${overallScore}%, your organization shows strong potential for successful AI implementation. Focus on addressing specific gaps to maximize impact.`
+                };
+            } else if (overallScore >= 50) {
+                overallInsight = {
+                    type: 'opportunity',
+                    icon: '📈',
+                    title: 'Solid Foundation with Growth Potential',
+                    description: `Your ${overallScore}% readiness score indicates good potential. Strategic improvements in key areas will position you for AI success.`
+                };
+            } else {
+                overallInsight = {
+                    type: 'opportunity',
+                    icon: '🏗️',
+                    title: 'Foundation Building Phase',
+                    description: `Your ${overallScore}% score suggests focusing on fundamental readiness areas before pursuing complex AI initiatives will yield the best results.`
+                };
+            }
+            
+            insights.push(overallInsight);
+            
+            return insights;
+        }
+        
+        // Render insights
+        function renderInsights() {
+            const insights = generateInsights();
+            const container = document.getElementById('dynamicInsights');
+            
+            insights.forEach(insight => {
+                const insightDiv = document.createElement('div');
+                insightDiv.className = `insight-card ${insight.type}`;
+                
+                insightDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <span class="text-3xl mr-4">${insight.icon}</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-2 text-lg">${insight.title}</h4>
+                            <p class="text-gray-700">${insight.description}</p>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(insightDiv);
+            });
+        }
+        
+        // Generate action plan
+        function generateActionPlan() {
+            const actions = {
+                immediate: [],
+                shortTerm: [],
+                longTerm: []
+            };
+            
+            // Generate actions based on scores
+            if (strategyScore < 70) {
+                actions.immediate.push("Define clear AI vision and objectives");
+                actions.shortTerm.push("Develop comprehensive AI strategy document");
+            }
+            
+            if (dataScore < 70) {
+                actions.immediate.push("Audit current data quality and accessibility");
+                actions.shortTerm.push("Implement data governance framework");
+            }
+            
+            if (technologyScore < 70) {
+                actions.shortTerm.push("Assess and upgrade IT infrastructure");
+                actions.longTerm.push("Implement cloud-first AI architecture");
+            }
+            
+            if (cultureScore < 70) {
+                actions.immediate.push("Launch AI awareness training program");
+                actions.shortTerm.push("Build change management capabilities");
+            }
+            
+            // Default actions if scores are good
+            if (actions.immediate.length === 0) {
+                actions.immediate.push("Identify pilot AI use cases");
+                actions.immediate.push("Form AI governance committee");
+            }
+            
+            if (actions.shortTerm.length === 0) {
+                actions.shortTerm.push("Launch first AI pilot project");
+                actions.shortTerm.push("Establish AI success metrics");
+            }
+            
+            if (actions.longTerm.length === 0) {
+                actions.longTerm.push("Scale successful AI implementations");
+                actions.longTerm.push("Build AI center of excellence");
+            }
+            
+            return actions;
+        }
+        
+        // Render action plan
+        function renderActionPlan() {
+            const actions = generateActionPlan();
+            const container = document.getElementById('actionPlan');
+            
+            const timeframes = [
+                { key: 'immediate', title: '🚀 Immediate (0-30 days)', color: 'yellow' },
+                { key: 'shortTerm', title: '📈 Short-term (30-90 days)', color: 'blue' },
+                { key: 'longTerm', title: '🎯 Long-term (90+ days)', color: 'green' }
+            ];
+            
+            timeframes.forEach(timeframe => {
+                const actionDiv = document.createElement('div');
+                actionDiv.className = `bg-${timeframe.color}-50 rounded-lg p-4`;
+                
+                let actionsHTML = '';
+                actions[timeframe.key].forEach(action => {
+                    actionsHTML += `<li class="text-sm text-gray-700 mb-2">• ${action}</li>`;
+                });
+                
+                actionDiv.innerHTML = `
+                    <h4 class="font-semibold text-${timeframe.color}-800 mb-3">${timeframe.title}</h4>
+                    <ul class="space-y-1">${actionsHTML}</ul>
+                `;
+                
+                container.appendChild(actionDiv);
+            });
+        }
+        
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Initialize everything
+        setTimeout(() => {
+            createRadarChart();
+            renderInsights();
+            renderActionPlan();
+        }, 1000);
+    </script>
+</body>
+</html>

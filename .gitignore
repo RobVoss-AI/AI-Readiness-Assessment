@@ -1,0 +1,55 @@
+# Sensitive Files
+*.env
+.env
+config.js
+secrets.js
+
+# System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+security_violations
+
+# Temporary Files
+*.tmp
+*.temp
+*~
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup Files
+*.bak
+*.backup
+
+# Node.js (if added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating System
+*.pid
+*.seed
+*.pid.lock
+
+# Development Tools
+.nyc_output
+coverage/
+.grunt
+.sass-cache
+
+# Local Development
+localhost-*
+test-*

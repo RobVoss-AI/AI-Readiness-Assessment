@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Questions | Voss AI Opportunity Scorecard</title>
+    <meta name="description" content="Complete your AI readiness assessment questionnaire">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s;
+            border-radius: 0.375rem;
+            outline: none;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:focus {
+            box-shadow: 0 0 0 2px rgba(0, 191, 165, 0.5), 0 0 0 4px rgba(0, 191, 165, 0.25);
+        }
+        .btn-primary {
+            color: white;
+            background-color: #00BFA5;
+        }
+        .btn-primary:hover {
+            background-color: #009B8D;
+        }
+        .btn-outline {
+            color: #374151;
+            background-color: white;
+            border: 1px solid #d1d5db;
+        }
+        .btn-outline:hover {
+            background-color: #f9fafb;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 0.5rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+        }
+        .progress-bar {
+            height: 0.5rem;
+            border-radius: 9999px;
+            background-color: #00BFA5;
+            transition: all 0.3s;
+        }
+        
+        .question-card {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 0.75rem;
+            border-left: 4px solid #00BFA5;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .likert-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .likert-option {
+            padding: 0.75rem 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+            min-height: 65px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Color coding for Likert scale options - VossAI brand colors */
+        .likert-option[data-value="0"] {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+        .likert-option[data-value="0"]:hover {
+            background-color: #fee2e2;
+            border-color: #f87171;
+            transform: translateY(-2px);
+        }
+        .likert-option[data-value="0"].selected {
+            background-color: #dc2626;
+            border-color: #dc2626;
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+        
+        .likert-option[data-value="1"] {
+            background-color: #fef3c7;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+        .likert-option[data-value="1"]:hover {
+            background-color: #fde047;
+            border-color: #facc15;
+            transform: translateY(-2px);
+        }
+        .likert-option[data-value="1"].selected {
+            background-color: #d97706;
+            border-color: #d97706;
+            color: white;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+        }
+        
+        .likert-option[data-value="2"] {
+            background-color: #f8fafc;
+            border-color: #e2e8f0;
+            color: #475569;
+        }
+        .likert-option[data-value="2"]:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+        .likert-option[data-value="2"].selected {
+            background-color: #64748b;
+            border-color: #64748b;
+            color: white;
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        }
+        
+        .likert-option[data-value="3"] {
+            background-color: #f0fdfa;
+            border-color: #99f6e4;
+            color: #134e4a;
+        }
+        .likert-option[data-value="3"]:hover {
+            background-color: #ccfbf1;
+            border-color: #5eead4;
+            transform: translateY(-2px);
+        }
+        .likert-option[data-value="3"].selected {
+            background-color: #0f766e;
+            border-color: #0f766e;
+            color: white;
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+        }
+        
+        .likert-option[data-value="4"] {
+            background-color: #e6fffa;
+            border-color: #80e6d6;
+            color: #004d44;
+        }
+        .likert-option[data-value="4"]:hover {
+            background-color: #b3f5ec;
+            border-color: #4dd5c3;
+            transform: translateY(-2px);
+        }
+        .likert-option[data-value="4"].selected {
+            background-color: #00BFA5;
+            border-color: #00BFA5;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3);
+        }
+        
+        /* Mobile improvements */
+        @media (max-width: 768px) {
+            .likert-container {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 0.25rem;
+            }
+            .likert-option {
+                padding: 0.5rem 0.125rem;
+                font-size: 0.625rem;
+                min-height: 55px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .likert-container {
+                gap: 0.125rem;
+            }
+            .likert-option {
+                padding: 0.375rem 0.0625rem;
+                font-size: 0.5rem;
+                min-height: 50px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <main class="min-h-screen py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-3xl mx-auto">
+                <!-- Progress bar -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700" id="sectionInfo">
+                            Section 1 of 6: AI Strategy & Vision
+                        </span>
+                        <span class="text-sm font-medium text-gray-700" id="progressPercent">
+                            0% Complete
+                        </span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Section header -->
+                <div class="mb-8 text-center">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2" id="sectionTitle">
+                        AI Strategy & Vision
+                    </h1>
+                    <p class="text-gray-600" id="sectionDescription">
+                        Assess your organization's strategic approach to AI adoption
+                    </p>
+                    <div class="mt-4">
+                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full" id="questionCount">
+                            5 questions
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Questions container -->
+                <div class="bg-white rounded-lg shadow-md p-6 md:p-8" id="questionsCard">
+                    <div id="questionsContainer">
+                        <!-- Questions will be dynamically generated here -->
+                    </div>
+                    
+                    <!-- Navigation buttons -->
+                    <div class="flex justify-between mt-8">
+                        <button
+                            type="button"
+                            id="prevButton"
+                            class="btn btn-outline"
+                            disabled
+                        >
+                            ← Previous
+                        </button>
+                        <button
+                            type="button"
+                            id="nextButton"
+                            class="btn btn-primary"
+                        >
+                            See Results →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Back to assessment link -->
+                <div class="mt-8 text-center">
+                    <a href="index.html" class="text-blue-600 hover:text-blue-800">
+                        ← Back to User Information
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg mr-3" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mr-3" style="display: none;">
+                            <span class="text-white font-bold text-lg">V</span>
+                        </div>
+                        <div>
+                            <div class="text-xl font-bold">VossAIConsulting</div>
+                            <div class="text-sm text-gray-400">Empowering Organizations with Strategic AI Implementation</div>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Led by Dr. Robert Voss, we bridge academic insight with business AI innovation. Specializing in AI readiness assessments, strategic planning, and implementation support for organizations ready to transform with AI.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://x.com/ai_voss53755" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/ai-robvoss" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="mailto:robvoss@vossaiconsulting.com" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2L3 7v10c0 5.55 3.84 9.95 9 9.95s9-4.4 9-9.95V7l-9-5zm0 2.5l6.5 3.5-6.5 3.5L5.5 8 12 4.5zM5 9.18l7 3.82 7-3.82V17c0 4.52-3.48 7.95-7 7.95S5 21.52 5 17V9.18z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-3">
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Assessment & Planning</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Speaking Engagements</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Implementation Support</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Fractional CTO</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <ul class="space-y-3">
+                        <li><a href="mailto:robvoss@vossaiconsulting.com" class="text-gray-400 hover:text-white transition-colors">robvoss@vossaiconsulting.com</a></li>
+                        <li><a href="tel:660-215-1313" class="text-gray-400 hover:text-white transition-colors">660-215-1313</a></li>
+                        <li><a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-gray-400 hover:text-white transition-colors">Schedule Consultation</a></li>
+                        <li><a href="https://vossaiconsulting.com" target="_blank" class="text-gray-400 hover:text-white transition-colors">Visit Website</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 text-sm">
+                        &copy; <span id="currentYear"></span> VossAIConsulting. All rights reserved.
+                    </p>
+                    <p class="text-gray-400 text-sm mt-4 md:mt-0">
+                        Bridging Academic Insight with Business AI Innovation
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById("currentYear").textContent = new Date().getFullYear();
+        
+        // Safe localStorage access
+        function safeLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return {
+                    getItem: function(key) { return localStorage.getItem(key); },
+                    setItem: function(key, value) { localStorage.setItem(key, value); },
+                    removeItem: function(key) { localStorage.removeItem(key); }
+                };
+            } catch (e) {
+                var memoryStorage = {};
+                return {
+                    getItem: function(key) { return memoryStorage[key] || null; },
+                    setItem: function(key, value) { memoryStorage[key] = value; },
+                    removeItem: function(key) { delete memoryStorage[key]; }
+                };
+            }
+        }
+        
+        var storage = safeLocalStorage();
+        var answers = {};
+        var currentSection = 0;
+        var totalSections = 6;
+        
+        // Define all sections
+        var sections = [
+            {
+                id: 'strategy',
+                title: 'AI Strategy & Vision',
+                description: 'Assess your organization\'s strategic approach to AI adoption',
+                questions: [
+                    { id: 'strategy_vision', text: 'Our organization has a clear, documented vision for how AI will create business value' },
+                    { id: 'strategy_problems', text: 'We have identified specific, measurable business problems that AI could help solve' },
+                    { id: 'strategy_leadership', text: 'Our leadership team actively champions and supports AI initiatives' },
+                    { id: 'strategy_budget', text: 'We have allocated appropriate budget and resources for AI implementation' },
+                    { id: 'strategy_culture', text: 'Our organization has a culture that embraces innovation and technological change' }
+                ]
+            },
+            {
+                id: 'operations',
+                title: 'Operational Readiness',
+                description: 'Evaluate how well your operations can integrate AI solutions',
+                questions: [
+                    { id: 'ops_process_mapping', text: 'We have documented and mapped our key business processes in detail' },
+                    { id: 'ops_automation_candidates', text: 'We have identified repetitive, rule-based tasks that could be automated' },
+                    { id: 'ops_change_readiness', text: 'Our operational teams are receptive to process changes enabled by AI' },
+                    { id: 'ops_efficiency_measurement', text: 'We have clear metrics to measure operational efficiency improvements' }
+                ]
+            },
+            {
+                id: 'technology',
+                title: 'Technology Infrastructure',
+                description: 'Assess your technical readiness for AI implementation',
+                questions: [
+                    { id: 'tech_infrastructure', text: 'Our current IT infrastructure can support AI applications and workloads' },
+                    { id: 'tech_cloud_experience', text: 'We have experience with cloud computing platforms and services' },
+                    { id: 'tech_data_systems', text: 'Our data systems are well-integrated and accessible for AI applications' },
+                    { id: 'tech_security', text: 'We have robust cybersecurity measures in place for AI systems' }
+                ]
+            },
+            {
+                id: 'data',
+                title: 'Data Quality & Governance',
+                description: 'Evaluate your data readiness for AI applications',
+                questions: [
+                    { id: 'data_quality', text: 'We have high-quality, well-structured data available for AI projects' },
+                    { id: 'data_accessibility', text: 'Our data is well-organized and easily accessible to relevant teams' },
+                    { id: 'data_governance', text: 'We have strong data governance policies and procedures in place' },
+                    { id: 'data_privacy', text: 'We have clear data privacy and compliance frameworks established' }
+                ]
+            },
+            {
+                id: 'culture',
+                title: 'Organizational Culture',
+                description: 'Assess cultural readiness for AI adoption and change',
+                questions: [
+                    { id: 'culture_enthusiasm', text: 'Our employees are generally enthusiastic about AI adoption and its potential' },
+                    { id: 'culture_change_embrace', text: 'We have a culture that embraces and adapts well to technological change' },
+                    { id: 'culture_learning', text: 'Our organization prioritizes continuous learning and skill development' },
+                    { id: 'culture_collaboration', text: 'We foster collaboration between technical and business teams' }
+                ]
+            },
+            {
+                id: 'automation',
+                title: 'Automation Readiness',
+                description: 'Identify current automation experience and opportunities',
+                questions: [
+                    { id: 'auto_current_state', text: 'We have already implemented some form of process automation' },
+                    { id: 'auto_employee_understanding', text: 'Our employees understand how automation enhances rather than replaces their work' },
+                    { id: 'auto_tools_experience', text: 'We have experience with automation tools and technologies' },
+                    { id: 'auto_roi_measurement', text: 'We can measure and demonstrate ROI from automation initiatives' }
+                ]
+            }
+        ];
+        
+        // Load existing answers if any
+        try {
+            answers = JSON.parse(storage.getItem("voss_answers") || "{}");
+        } catch (e) {
+            answers = {};
+        }
+        
+        // Simple answer selection function using event delegation
+        function selectAnswer(questionId, value) {
+            console.log('Answer selected:', questionId, value);
+            
+            // Store the answer
+            answers[questionId] = value;
+            storage.setItem("voss_answers", JSON.stringify(answers));
+            
+            // Find the specific question card and update selection
+            var questionCards = document.querySelectorAll('.question-card');
+            for (var i = 0; i < questionCards.length; i++) {
+                var card = questionCards[i];
+                var questionIdFromCard = card.getAttribute('data-question-id');
+                
+                if (questionIdFromCard === questionId) {
+                    // Remove selected class from all buttons in this card
+                    var buttons = card.querySelectorAll('.likert-option');
+                    for (var j = 0; j < buttons.length; j++) {
+                        buttons[j].classList.remove('selected');
+                    }
+                    
+                    // Add selected class to the clicked button
+                    var selectedButton = card.querySelector('[data-value="' + value + '"]');
+                    if (selectedButton) {
+                        selectedButton.classList.add('selected');
+                    }
+                    break;
+                }
+            }
+            updateProgress();
+        }
+        
+        // Set up event delegation for button clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('likert-option') || e.target.parentNode.classList.contains('likert-option')) {
+                var button = e.target.classList.contains('likert-option') ? e.target : e.target.parentNode;
+                var questionCard = button.closest('.question-card');
+                var questionId = questionCard.getAttribute('data-question-id');
+                var value = parseInt(button.getAttribute('data-value'));
+                
+                if (questionId && value !== null && !isNaN(value)) {
+                    selectAnswer(questionId, value);
+                }
+            }
+        });
+        
+        // Update progress bar and navigation
+        function updateProgress() {
+            var section = sections[currentSection];
+            var answeredQuestions = 0;
+            
+            // Count answered questions in current section
+            for (var i = 0; i < section.questions.length; i++) {
+                if (answers[section.questions[i].id] !== undefined) {
+                    answeredQuestions++;
+                }
+            }
+            
+            // Calculate overall progress
+            var sectionProgress = (currentSection + (answeredQuestions / section.questions.length)) / totalSections;
+            var progressPercent = Math.round(sectionProgress * 100);
+            
+            // Update UI
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+            document.getElementById('progressPercent').textContent = progressPercent + '% Complete';
+            document.getElementById('sectionInfo').textContent = 'Section ' + (currentSection + 1) + ' of ' + totalSections + ': ' + section.title;
+            
+            // Update navigation buttons
+            document.getElementById('prevButton').disabled = currentSection === 0;
+            var nextButton = document.getElementById('nextButton');
+            if (currentSection === totalSections - 1) {
+                nextButton.textContent = 'See Results →';
+            } else {
+                nextButton.textContent = 'Next Section →';
+            }
+        }
+        
+        // Render current section
+        function renderSection() {
+            console.log('=== RENDERING SECTION ===');
+            console.log('Current section index:', currentSection);
+            
+            var section = sections[currentSection];
+            if (!section) {
+                console.error('No section found for index:', currentSection);
+                return;
+            }
+            
+            console.log('Rendering section:', section.title, 'with', section.questions.length, 'questions');
+            
+            // Update header
+            document.getElementById('sectionTitle').textContent = section.title;
+            document.getElementById('sectionDescription').textContent = section.description;
+            document.getElementById('questionCount').textContent = section.questions.length + ' questions';
+            
+            // Build questions HTML
+            var questionsHTML = '';
+            for (var i = 0; i < section.questions.length; i++) {
+                var question = section.questions[i];
+                var questionNum = i + 1;
+                
+                console.log('Building HTML for question:', question.id, '-', question.text);
+                
+                questionsHTML += '<div class="question-card" data-question-id="' + question.id + '">';
+                questionsHTML += '<h3 class="text-lg font-medium text-gray-900 mb-4">';
+                questionsHTML += '<span class="text-blue-600 font-bold">' + questionNum + '.</span> ';
+                questionsHTML += question.text;
+                questionsHTML += '<span class="text-red-500 ml-1">*</span>';
+                questionsHTML += '</h3>';
+                questionsHTML += '<div class="likert-container">';
+                
+                // Add Likert scale buttons
+                var likertLabels = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+                for (var j = 0; j < 5; j++) {
+                    var isSelected = answers[question.id] === j ? ' selected' : '';
+                    questionsHTML += '<button type="button" class="likert-option' + isSelected + '" data-value="' + j + '">';
+                    questionsHTML += '<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">' + (j + 1) + '</div>';
+                    questionsHTML += '<div style="font-size: 0.65rem; line-height: 1.1; font-weight: 500;">' + likertLabels[j] + '</div>';
+                    questionsHTML += '</button>';
+                }
+                
+                questionsHTML += '</div>';
+                questionsHTML += '</div>';
+            }
+            
+            console.log('Generated HTML length:', questionsHTML.length);
+            console.log('First 200 chars of HTML:', questionsHTML.substring(0, 200));
+            
+            var container = document.getElementById('questionsContainer');
+            if (!container) {
+                console.error('questionsContainer element not found!');
+                return;
+            }
+            
+            container.innerHTML = questionsHTML;
+            console.log('HTML injected into container');
+            
+            updateProgress();
+            console.log('Section rendering completed');
+        }
+        
+        // Handle next button click
+        document.getElementById("nextButton").addEventListener("click", function() {
+            console.log('Next button clicked, current section:', currentSection);
+            console.log('Current answers:', answers);
+            
+            // Calculate section score based on answers
+            var section = sections[currentSection];
+            var sectionScore = 0;
+            var answeredQuestions = 0;
+            
+            console.log('Calculating score for section:', section.id, 'with questions:', section.questions.length);
+            
+            for (var i = 0; i < section.questions.length; i++) {
+                var questionId = section.questions[i].id;
+                if (answers[questionId] !== undefined) {
+                    var questionScore = (answers[questionId] / 4) * 100; // Convert 0-4 to 0-100
+                    sectionScore += questionScore;
+                    answeredQuestions++;
+                    console.log('Question', questionId, 'answer:', answers[questionId], 'score:', questionScore);
+                } else {
+                    // Add default answer if none provided
+                    answers[questionId] = 2; // Default to "Neutral" for fairness
+                    sectionScore += 50; // 2/4 * 100
+                    answeredQuestions++;
+                    console.log('Question', questionId, 'defaulted to 2 (neutral), score: 50');
+                }
+            }
+            
+            // Average the section score
+            if (answeredQuestions > 0) {
+                sectionScore = Math.round(sectionScore / answeredQuestions);
+            }
+            
+            console.log('Final section score for', section.id, ':', sectionScore, 'from', answeredQuestions, 'questions');
+            
+            // Save section score
+            var scores = {};
+            try {
+                scores = JSON.parse(storage.getItem("voss_scores") || "{}");
+            } catch (e) {
+                scores = {};
+            }
+            scores[section.id] = sectionScore;
+            
+            // Save both scores and answers
+            storage.setItem("voss_scores", JSON.stringify(scores));
+            storage.setItem("voss_answers", JSON.stringify(answers));
+            
+            console.log('Updated scores object:', scores);
+            console.log('Saved to localStorage - voss_scores:', storage.getItem("voss_scores"));
+            
+            // Move to next section or results
+            if (currentSection < totalSections - 1) {
+                currentSection++;
+                renderSection();
+                window.scrollTo(0, 0);
+            } else {
+                // All sections completed, redirect to results
+                console.log('All sections completed, final scores:', scores);
+                
+                // Double-check data is saved before redirecting
+                setTimeout(function() {
+                    var savedScores = storage.getItem("voss_scores");
+                    var savedAnswers = storage.getItem("voss_answers");
+                    console.log('Pre-redirect check - saved scores:', savedScores);
+                    console.log('Pre-redirect check - saved answers:', savedAnswers);
+                    window.location.href = "results.html";
+                }, 100);
+            }
+        });
+        
+        // Handle previous button click
+        document.getElementById("prevButton").addEventListener("click", function() {
+            if (currentSection > 0) {
+                currentSection--;
+                renderSection();
+                window.scrollTo(0, 0);
+            }
+        });
+        
+        // Initialize the assessment when DOM is loaded
+        console.log('=== ASSESSMENT PAGE INITIALIZATION ===');
+        console.log('DOM loaded, sections defined:', sections.length);
+        console.log('Current section:', currentSection);
+        console.log('Existing answers:', answers);
+        
+        // Make sure DOM is ready and then render
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM fully loaded, rendering section...');
+                renderSection();
+            });
+        } else {
+            console.log('DOM already loaded, rendering section immediately...');
+            renderSection();
+        }
+    </script>
+
+</body>
+</html>
