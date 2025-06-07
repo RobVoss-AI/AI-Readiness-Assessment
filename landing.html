@@ -205,7 +205,7 @@
                         <a href="#features" class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Features</a>
                         <a href="#how-it-works" class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">How It Works</a>
                         <a href="#pricing" class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">Pricing</a>
-                        <a href="index.html" class="btn btn-primary text-sm">Start Assessment</a>
+                        <a href="user-info.html" class="btn btn-primary text-sm">Start Assessment</a>
                     </div>
                 </div>
 
@@ -245,7 +245,7 @@
                     <a href="#how-it-works" class="block px-4 py-3 text-lg font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">How It Works</a>
                     <a href="#pricing" class="block px-4 py-3 text-lg font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">Pricing</a>
                     <div class="pt-4">
-                        <a href="index.html" class="btn btn-primary">Start Free Assessment</a>
+                        <a href="user-info.html" class="btn btn-primary">Start Free Assessment</a>
                     </div>
                 </nav>
             </div>
@@ -271,7 +271,7 @@
                         
                         <!-- CTA Buttons -->
                         <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <a href="assessment-clean.html" class="btn btn-primary text-lg">
+                            <a href="user-info.html" class="btn btn-primary text-lg">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
@@ -537,7 +537,7 @@
                                 </li>
                             </ul>
                             
-                            <a href="index.html" class="btn btn-outline w-full">Start Free Assessment</a>
+                            <a href="user-info.html" class="btn btn-outline w-full">Start Free Assessment</a>
                         </div>
                         
                         <!-- Premium Tier -->
@@ -682,7 +682,7 @@
                     </p>
                     
                     <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <a href="assessment-clean.html" class="btn bg-white text-blue-600 hover:bg-gray-100 text-lg">
+                        <a href="user-info.html" class="btn bg-white text-blue-600 hover:bg-gray-100 text-lg">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
@@ -874,7 +874,7 @@
         // Add loading states for buttons
         document.querySelectorAll('.btn-primary').forEach(btn => {
             btn.addEventListener('click', function(e) {
-                if (this.href && this.href.includes('index.html')) {
+                if (this.href && this.href.includes('user-info.html')) {
                     this.style.opacity = '0.8';
                     this.innerHTML = `
                         <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
@@ -892,7 +892,7 @@
         // Preload critical assessment page
         const link = document.createElement('link');
         link.rel = 'prefetch';
-        link.href = 'index.html';
+        link.href = 'user-info.html';
         document.head.appendChild(link);
     </script>
 

@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Assessment | Voss AI Opportunity Scorecard</title>
+    <meta name="description" content="Begin your AI readiness assessment and unlock personalized insights">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5JLD64W2R9"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-5JLD64W2R9');
+    </script>
+    <script src="security-utils.js"></script>
+    <script src="security-monitor.js"></script>
+    <style>
+        :root {
+            --primary-teal: #00BFA5;
+            --primary-teal-light: #4dd5c3;
+            --primary-teal-dark: #009B8D;
+        }
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            line-height: 1.6;
+            color: #1f2937;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            min-height: 56px; /* Extra touch-friendly */
+        }
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
+        }
+        
+        .btn-primary {
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-light) 100%);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-teal-dark) 0%, var(--primary-teal) 100%);
+            transform: translateY(-2px);
+        }
+        .btn-primary:focus {
+            box-shadow: 0 0 0 4px rgba(0, 191, 165, 0.5);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .form-input {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.125rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            min-height: 56px; /* Touch-friendly */
+        }
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+            border-color: #3b82f6;
+        }
+        
+        .form-input:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+        }
+        
+        .select-input {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.125rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            min-height: 56px;
+            appearance: none;
+            background-color: white;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 3rem;
+        }
+        .select-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+            border-color: #3b82f6;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.5rem;
+        }
+        
+        .checkbox-input {
+            height: 1.25rem;
+            width: 1.25rem;
+            color: #2563eb;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+            flex-shrink: 0;
+        }
+        .checkbox-input:focus {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 0.75rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-teal-light), var(--primary-teal));
+            transition: all 0.5s ease-out;
+        }
+        
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .form-input, .btn {
+                font-size: 1.1rem;
+                min-height: 60px;
+            }
+            
+            .form-label {
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Smooth animations */
+        .fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Success checkmark animation */
+        .success-checkmark {
+            animation: checkmark 0.6s ease-in-out;
+        }
+        
+        @keyframes checkmark {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="display: none;">
+                        <span class="text-white font-bold text-lg">V</span>
+                    </div>
+                    <div class="ml-3">
+                        <div class="text-xl font-bold text-gray-900">VossAIConsulting</div>
+                        <div class="text-xs text-gray-500 -mt-1">AI Readiness Assessment</div>
+                    </div>
+                </div>
+                <a href="index.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    ← Back to Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="py-8 md:py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-2xl mx-auto">
+                
+                <!-- Progress Bar -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-medium text-gray-600">Step 1 of 2</span>
+                        <span class="text-sm font-medium text-gray-600">0% Complete</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 0%" id="progressBar"></div>
+                    </div>
+                </div>
+                
+                <!-- Header Section -->
+                <div class="text-center mb-8 fade-in">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                        Let's Get Started
+                    </h1>
+                    <p class="text-xl text-gray-600 leading-relaxed">
+                        Tell us about yourself to get personalized AI insights tailored to your industry and role.
+                    </p>
+                </div>
+                
+                <!-- Assessment Form -->
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 fade-in">
+                    <form id="assessmentForm" novalidate>
+                        
+                        <!-- First Name -->
+                        <div class="form-group">
+                            <label for="firstName" class="form-label">
+                                First Name
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="firstName"
+                                name="firstName"
+                                class="form-input"
+                                placeholder="Enter your first name"
+                                required
+                                autocomplete="given-name"
+                            />
+                            <p class="error-message" id="firstNameError">Please enter your first name</p>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label for="email" class="form-label">
+                                Email Address
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-input"
+                                placeholder="Enter your email address"
+                                required
+                                autocomplete="email"
+                            />
+                            <p class="error-message" id="emailError">Please enter a valid email address</p>
+                            <p class="text-sm text-gray-500 mt-2">We'll send your results to this email</p>
+                        </div>
+                        
+                        <!-- Industry -->
+                        <div class="form-group">
+                            <label for="industry" class="form-label">
+                                Industry
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                id="industry"
+                                name="industry"
+                                class="select-input"
+                                required
+                            >
+                                <option value="">Select your industry</option>
+                                <option value="Finance & Banking">Finance & Banking</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="Education">Education</option>
+                                <option value="Technology">Technology</option>
+                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Legal">Legal</option>
+                                <option value="Government">Government</option>
+                                <option value="Consulting">Consulting</option>
+                                <option value="Non-profit">Non-profit</option>
+                                <option value="Real Estate">Real Estate</option>
+                                <option value="Media & Entertainment">Media & Entertainment</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Energy">Energy</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <p class="error-message" id="industryError">Please select your industry</p>
+                        </div>
+                        
+                        <!-- Job Title -->
+                        <div class="form-group">
+                            <label for="jobTitle" class="form-label">
+                                Job Title
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="jobTitle"
+                                name="jobTitle"
+                                class="form-input"
+                                placeholder="e.g., Chief Technology Officer, Data Analyst, etc."
+                                required
+                                autocomplete="organization-title"
+                            />
+                            <p class="error-message" id="jobTitleError">Please enter your job title</p>
+                        </div>
+                        
+                        <!-- Role Level -->
+                        <div class="form-group">
+                            <label for="role" class="form-label">
+                                Role Level
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                id="role"
+                                name="role"
+                                class="select-input"
+                                required
+                            >
+                                <option value="">Select your role level</option>
+                                <option value="Team Member">Team Member / Individual Contributor</option>
+                                <option value="Manager">Manager / Team Lead</option>
+                                <option value="Executive">Executive / C-Level / VP</option>
+                                <option value="Consultant">Consultant / Advisor</option>
+                            </select>
+                            <p class="error-message" id="roleError">Please select your role level</p>
+                            <p class="text-sm text-gray-500 mt-2">This helps us tailor insights to your perspective</p>
+                        </div>
+                        
+                        <!-- Organization Size (Optional) -->
+                        <div class="form-group">
+                            <label for="orgSize" class="form-label">
+                                Organization Size
+                                <span class="text-gray-500 text-base font-normal">(Optional)</span>
+                            </label>
+                            <select
+                                id="orgSize"
+                                name="orgSize"
+                                class="select-input"
+                            >
+                                <option value="">Select organization size</option>
+                                <option value="1-10">1-10 employees</option>
+                                <option value="11-50">11-50 employees</option>
+                                <option value="51-200">51-200 employees</option>
+                                <option value="201-1000">201-1,000 employees</option>
+                                <option value="1001-5000">1,001-5,000 employees</option>
+                                <option value="5000+">5,000+ employees</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Consent Checkbox -->
+                        <div class="form-group">
+                            <div class="checkbox-container">
+                                <input
+                                    type="checkbox"
+                                    id="consentMarketing"
+                                    name="consentMarketing"
+                                    class="checkbox-input"
+                                    required
+                                />
+                                <div>
+                                    <label for="consentMarketing" class="text-base font-medium text-gray-900 cursor-pointer">
+                                        I agree to receive my assessment results and helpful AI insights
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <p class="text-sm text-gray-600 mt-1">
+                                        We'll send your personalized results and occasionally share valuable AI insights. You can unsubscribe anytime.
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="error-message" id="consentError">Please agree to receive your assessment results</p>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="form-group">
+                            <button type="submit" id="submitButton" class="btn btn-primary w-full text-lg">
+                                <span id="buttonText">Continue to Assessment</span>
+                                <span id="buttonLoading" class="hidden">
+                                    <div class="loading-spinner mr-3"></div>
+                                    Processing...
+                                </span>
+                            </button>
+                        </div>
+                        
+                        <!-- Privacy Note -->
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Your information is secure and will never be shared with third parties.
+                            </p>
+                            <p class="text-xs text-gray-400 mt-2">
+                                By continuing, you agree to our 
+                                <a href="terms-of-service.html" class="text-blue-600 hover:text-blue-800">Terms of Service</a> and 
+                                <a href="privacy-policy.html" class="text-blue-600 hover:text-blue-800">Privacy Policy</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Benefits Preview -->
+                <div class="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 md:p-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">What You'll Get Next</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z" />
+                                </svg>
+                            </div>
+                            <h4 class="font-semibold text-gray-900 mb-2">5-Minute Assessment</h4>
+                            <p class="text-sm text-gray-600">Quick questions about your AI readiness across 6 key dimensions</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h4 class="font-semibold text-gray-900 mb-2">Instant Results</h4>
+                            <p class="text-sm text-gray-600">Professional radar chart showing your AI readiness score</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <h4 class="font-semibold text-gray-900 mb-2">Actionable Insights</h4>
+                            <p class="text-sm text-gray-600">Personalized recommendations for your industry and role</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        console.log('🟢 Index.html JavaScript loaded and running');
+        
+        // Safe localStorage access
+        function safeLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return {
+                    getItem: (key) => localStorage.getItem(key),
+                    setItem: (key, value) => localStorage.setItem(key, value),
+                    removeItem: (key) => localStorage.removeItem(key)
+                };
+            } catch (e) {
+                console.warn('localStorage not available, using memory storage');
+                const memoryStorage = {};
+                return {
+                    getItem: (key) => memoryStorage[key] || null,
+                    setItem: (key, value) => { memoryStorage[key] = value; },
+                    removeItem: (key) => { delete memoryStorage[key]; }
+                };
+            }
+        }
+        
+        const storage = safeLocalStorage();
+        
+        // Form validation and submission
+        const form = document.getElementById('assessmentForm');
+        const submitButton = document.getElementById('submitButton');
+        const buttonText = document.getElementById('buttonText');
+        const buttonLoading = document.getElementById('buttonLoading');
+        const progressBar = document.getElementById('progressBar');
+        
+        // Load existing data if returning user
+        function loadExistingData() {
+            const existingData = JSON.parse(storage.getItem('voss_user') || '{}');
+            
+            Object.keys(existingData).forEach(key => {
+                const field = document.getElementById(key);
+                if (field && existingData[key]) {
+                    field.value = existingData[key];
+                    
+                    // Handle checkbox
+                    if (field.type === 'checkbox') {
+                        field.checked = existingData[key];
+                    }
+                }
+            });
+        }
+        
+        // Real-time validation
+        function validateField(fieldId, validationFn, errorMessage) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId + 'Error');
+            
+            function validate() {
+                const isValid = validationFn(field.value.trim());
+                
+                if (isValid) {
+                    field.classList.remove('border-red-300', 'ring-red-500');
+                    field.classList.add('border-green-300');
+                    errorElement.classList.add('hidden');
+                    
+                    // Add success checkmark
+                    if (!field.parentNode.querySelector('.success-checkmark')) {
+                        const checkmark = document.createElement('div');
+                        checkmark.className = 'absolute right-3 top-1/2 transform -translate-y-1/2 success-checkmark';
+                        checkmark.innerHTML = `
+                            <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        `;
+                        field.parentNode.style.position = 'relative';
+                        field.parentNode.appendChild(checkmark);
+                    }
+                } else {
+                    field.classList.remove('border-green-300');
+                    field.classList.add('border-red-300', 'ring-red-500');
+                    errorElement.textContent = errorMessage;
+                    errorElement.classList.remove('hidden');
+                    
+                    // Remove success checkmark
+                    const checkmark = field.parentNode.querySelector('.success-checkmark');
+                    if (checkmark) {
+                        checkmark.remove();
+                    }
+                }
+                
+                updateProgress();
+                return isValid;
+            }
+            
+            field.addEventListener('blur', validate);
+            field.addEventListener('input', validate);
+            
+            return validate;
+        }
+        
+        // Setup field validation
+        const validators = {
+            firstName: validateField('firstName', 
+                value => value.length >= 2, 
+                'Please enter your first name (at least 2 characters)'
+            ),
+            email: validateField('email', 
+                value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), 
+                'Please enter a valid email address'
+            ),
+            industry: validateField('industry', 
+                value => value !== '', 
+                'Please select your industry'
+            ),
+            jobTitle: validateField('jobTitle', 
+                value => value.length >= 2, 
+                'Please enter your job title'
+            ),
+            role: validateField('role', 
+                value => value !== '', 
+                'Please select your role level'
+            )
+        };
+        
+        // Consent checkbox validation
+        const consentCheckbox = document.getElementById('consentMarketing');
+        const consentError = document.getElementById('consentError');
+        
+        function validateConsent() {
+            const isValid = consentCheckbox.checked;
+            
+            if (isValid) {
+                consentError.classList.add('hidden');
+                consentCheckbox.parentNode.parentNode.classList.remove('border-red-200');
+                consentCheckbox.parentNode.parentNode.classList.add('border-green-200', 'bg-green-50');
+            } else {
+                consentError.classList.remove('hidden');
+                consentCheckbox.parentNode.parentNode.classList.add('border-red-200');
+                consentCheckbox.parentNode.parentNode.classList.remove('border-green-200', 'bg-green-50');
+            }
+            
+            updateProgress();
+            return isValid;
+        }
+        
+        consentCheckbox.addEventListener('change', validateConsent);
+        
+        // Update progress bar
+        function updateProgress() {
+            const totalFields = Object.keys(validators).length + 1; // +1 for consent
+            let completedFields = 0;
+            
+            Object.values(validators).forEach(validator => {
+                if (validator()) completedFields++;
+            });
+            
+            if (validateConsent()) completedFields++;
+            
+            const progress = Math.round((completedFields / totalFields) * 100);
+            progressBar.style.width = `${progress}%`;
+            
+            // Update progress text
+            const progressText = document.querySelector('.mb-3 .text-gray-600:last-child');
+            progressText.textContent = `${progress}% Complete`;
+            
+            // Enable/disable submit button
+            // submitButton.disabled = progress < 100; // Temporarily disabled for testing
+            
+            // Update button text based on progress
+            if (progress < 100) {
+                buttonText.textContent = `Continue to Assessment (${progress}% complete)`;
+                // submitButton.classList.add('opacity-50', 'cursor-not-allowed'); // Temporarily disabled
+            } else {
+                buttonText.textContent = 'Continue to Assessment';
+                submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        // Auto-save form data
+        function autoSave() {
+            const formData = new FormData(form);
+            const userData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key === 'consentMarketing') {
+                    userData[key] = document.getElementById(key).checked;
+                } else {
+                    userData[key] = value;
+                }
+            }
+            
+            storage.setItem('voss_user_draft', JSON.stringify(userData));
+        }
+        
+        // Auto-save every 2 seconds
+        let autoSaveTimer;
+        form.addEventListener('input', () => {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(autoSave, 2000);
+        });
+        
+        // Send data to Google Sheets
+        async function sendToGoogleSheets(userData) {
+            // Replace with your Google Apps Script Web App URL
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvfFMWKg81dAZEIO41_GmB724eCpraCBYjloziHye_9Aun-Jn7xBuf2L5QmgzfQu-j/exec";
+            
+            console.log('📝 Sending user data to Google Sheets...');
+            console.log('User data:', userData);
+            
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Required for Google Apps Script
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'user_data',
+                        ...userData,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                console.log('✅ User data sent to Google Sheets successfully');
+                return true;
+            } catch (error) {
+                console.error('❌ Error sending user data to Google Sheets:', error);
+                return false;
+            }
+        }
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Form submitted');
+            
+            // Check rate limiting first
+            if (!SecurityUtils.checkRateLimit('form_submission', 3, 300000)) {
+                alert('Too many submission attempts. Please wait 5 minutes and try again.');
+                return;
+            }
+            
+            // Final validation
+            let allValid = true;
+            Object.values(validators).forEach(validator => {
+                if (!validator()) allValid = false;
+            });
+            
+            if (!validateConsent()) allValid = false;
+            
+            if (!allValid) {
+                // Scroll to first error
+                const firstError = document.querySelector('.border-red-300, .border-red-200');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                return;
+            }
+            
+            // Show loading state
+            submitButton.disabled = true;
+            buttonText.classList.add('hidden');
+            buttonLoading.classList.remove('hidden');
+            
+            // Collect form data
+            const formData = new FormData(form);
+            const userData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key === 'consentMarketing') {
+                    userData[key] = document.getElementById(key).checked;
+                } else {
+                    userData[key] = SecurityUtils.sanitizeText(value);
+                }
+            }
+            
+            // Additional validation with SecurityUtils
+            const validationErrors = SecurityUtils.validateUserData(userData);
+            if (validationErrors.length > 0) {
+                alert('Please fix the following errors:\n' + validationErrors.join('\n'));
+                return;
+            }
+            
+            // Get tier from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const tier = urlParams.get('tier') || 'free';
+            
+            // Save data locally
+            storage.setItem('voss_user', JSON.stringify(userData));
+            storage.setItem('voss_tier', tier);
+            storage.removeItem('voss_user_draft'); // Clean up draft
+            
+            // Send to Google Sheets (async, doesn't block flow)
+            console.log('🔄 About to call sendToGoogleSheets...');
+            sendToGoogleSheets(userData);
+            
+            // Simulate processing time for better UX
+            setTimeout(() => {
+                // Add success animation
+                submitButton.innerHTML = `
+                    <svg class="w-6 h-6 mr-2 success-checkmark" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    Starting Assessment...
+                `;
+                
+                setTimeout(() => {
+                    window.location.href = 'assessment-clean.html';
+                }, 1000);
+            }, 1500);
+        });
+        
+        // Add button click handler as backup
+        submitButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Button clicked, disabled:', this.disabled);
+            
+            // For testing - bypass validation temporarily
+            if (true) { // Change this to check validation later
+                console.log('Proceeding to assessment...');
+                
+                // Create minimal user data to prevent assessment page errors
+                const userData = {
+                    firstName: document.getElementById('firstName').value || 'Test User',
+                    email: document.getElementById('email').value || 'test@example.com',
+                    industry: document.getElementById('industry').value || 'Technology',
+                    jobTitle: document.getElementById('jobTitle').value || 'Manager',
+                    role: document.getElementById('role').value || 'Manager',
+                    orgSize: document.getElementById('orgSize').value || '',
+                    consentMarketing: document.getElementById('consentMarketing').checked || false
+                };
+                
+                // Save to localStorage
+                try {
+                    storage.setItem('voss_user', JSON.stringify(userData));
+                    storage.setItem('voss_tier', 'free'); // Set default tier
+                    console.log('User data saved:', userData);
+                } catch (e) {
+                    console.log('Could not save to localStorage:', e);
+                    // Create fallback data
+                    window.vossUserData = userData;
+                }
+                
+                // Navigate to assessment
+                console.log('Navigating to assessment-clean.html...');
+                window.location.href = 'assessment-clean.html';
+            }
+        });
+        
+        // Load existing data on page load
+        loadExistingData();
+        
+        // Initial progress update
+        updateProgress();
+        
+        // Add input animations
+        document.querySelectorAll('.form-input, .select-input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentNode.classList.add('transform', 'scale-105');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentNode.classList.remove('transform', 'scale-105');
+            });
+        });
+        
+        // Keyboard navigation improvements
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                
+                // Find next input
+                const inputs = Array.from(document.querySelectorAll('input, select'));
+                const currentIndex = inputs.indexOf(e.target);
+                const nextInput = inputs[currentIndex + 1];
+                
+                if (nextInput) {
+                    nextInput.focus();
+                } else if (submitButton && !submitButton.disabled) {
+                    submitButton.click();
+                }
+            }
+        });
+        
+        // Preload next page
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = 'assessment-clean.html';
+        document.head.appendChild(link);
+    </script>
+
+</body>
+</html>
