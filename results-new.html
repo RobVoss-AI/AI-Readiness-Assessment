@@ -458,8 +458,25 @@
             
             console.log('🚀 Attempting to send results to Google Sheets...');
             console.log('User data:', userData);
+            console.log('User data type:', typeof userData);
+            console.log('User data keys:', Object.keys(userData || {}));
             console.log('Scores:', { strategy: strategyScore, operations: operationsScore, technology: technologyScore, data: dataScore, culture: cultureScore, automation: automationScore });
             console.log('Free responses:', freeResponses);
+            console.log('Full payload being sent:', {
+                type: 'assessment_results',
+                user: userData,
+                scores: {
+                    strategy: strategyScore,
+                    operations: operationsScore,
+                    technology: technologyScore,
+                    data: dataScore,
+                    culture: cultureScore,
+                    automation: automationScore
+                },
+                freeResponses: freeResponses,
+                overallScore: overallScore,
+                readinessLevel: readinessLevel
+            });
             
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {

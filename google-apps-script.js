@@ -54,15 +54,18 @@ function doPost(e) {
       }
       
       // Add complete assessment data (user info + results + free responses)
+      // Add some debugging to help troubleshoot
+      console.log('Assessment data received:', JSON.stringify(data, null, 2));
+      
       completeSheet.appendRow([
         new Date(),
-        data.user?.firstName || '',
-        data.user?.email || '',
-        data.user?.industry || '',
-        data.user?.jobTitle || '',
-        data.user?.role || '',
-        data.user?.orgSize || '',
-        data.user?.consentMarketing || false,
+        data.user?.firstName || 'No Name',
+        data.user?.email || 'No Email', 
+        data.user?.industry || 'No Industry',
+        data.user?.jobTitle || 'No Job Title',
+        data.user?.role || 'No Role',
+        data.user?.orgSize || 'No Org Size',
+        data.user?.consentMarketing || 'No Consent',
         data.overallScore || 0,
         data.scores?.strategy || 0,
         data.scores?.operations || 0,
@@ -70,11 +73,11 @@ function doPost(e) {
         data.scores?.data || 0,
         data.scores?.culture || 0,
         data.scores?.automation || 0,
-        data.freeResponses?.strategy_priorities || '',
-        data.freeResponses?.ops_bottlenecks || '',
-        data.freeResponses?.culture_barriers || '',
-        data.freeResponses?.auto_specific_tasks || '',
-        data.readinessLevel || ''
+        data.freeResponses?.strategy_priorities || 'No Strategy Response',
+        data.freeResponses?.ops_bottlenecks || 'No Ops Response',
+        data.freeResponses?.culture_barriers || 'No Culture Response',
+        data.freeResponses?.auto_specific_tasks || 'No Automation Response',
+        data.readinessLevel || 'No Level'
       ]);
     }
     
