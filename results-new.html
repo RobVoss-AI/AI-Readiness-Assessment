@@ -450,6 +450,13 @@
             // Get assessment answers to extract free responses
             const answers = JSON.parse(storage.getItem("voss_answers") || "{}");
             const freeResponses = {
+                strategy_open: answers.strategy_open || '',
+                ops_open: answers.ops_open || '',
+                tech_open: answers.tech_open || '',
+                data_open: answers.data_open || '',
+                culture_open: answers.culture_open || '',
+                auto_open: answers.auto_open || '',
+                // Legacy support for older question names
                 strategy_priorities: answers.strategy_priorities || '',
                 ops_bottlenecks: answers.ops_bottlenecks || '',
                 culture_barriers: answers.culture_barriers || '',
@@ -595,26 +602,45 @@
             };
             
             const sortedSections = Object.entries(sectionScores).sort(([,a], [,b]) => b - a);
-            const strongest = sortedSections[0];
-            const weakest = sortedSections[sortedSections.length - 1];
+            
+            // Filter sections by score ranges
+            const strongSections = sortedSections.filter(([,score]) => score >= 70);
+            const weakSections = sortedSections.filter(([,score]) => score < 50);
+            const criticalSections = sortedSections.filter(([,score]) => score < 25);
+            const weakestSection = sortedSections[sortedSections.length - 1];
             
             const insights = [];
             
-            // Strength insight
-            insights.push({
-                type: 'strength',
-                icon: '💪',
-                title: `Strong ${strongest[0]} Foundation`,
-                description: `Your ${strongest[0].toLowerCase()} readiness score of ${strongest[1]}% indicates a solid foundation in this area. This strength can be leveraged to accelerate AI adoption in other domains.`
-            });
+            // Strength insight - only for scores 70% and above
+            if (strongSections.length > 0) {
+                const strongest = strongSections[0];
+                insights.push({
+                    type: 'strength',
+                    icon: '💪',
+                    title: `${strongest[0]} is Your Strong Foundation`,
+                    description: `Your ${strongest[0].toLowerCase()} readiness score of ${strongest[1]}% represents a solid foundation. This strength can be leveraged to accelerate AI adoption across other domains.`
+                });
+            }
             
-            // Weakness insight
-            insights.push({
-                type: 'weakness',
-                icon: '⚠️',
-                title: `${weakest[0]} Needs Attention`,
-                description: `Your ${weakest[0].toLowerCase()} score of ${weakest[1]}% suggests this area requires focused improvement to support successful AI implementation.`
-            });
+            // Critical weakness insight for scores under 25%
+            if (criticalSections.length > 0) {
+                const critical = criticalSections[0];
+                insights.push({
+                    type: 'weakness',
+                    icon: '⚠️',
+                    title: `${critical[0]} Requires Immediate Attention`,
+                    description: `Your ${critical[0].toLowerCase()} score of ${critical[1]}% indicates a critical gap that needs strengthening before successful AI implementation. A <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-blue-600 hover:text-blue-800 underline">free 30-minute consultation with Voss AI Consulting</a> can help you quickly identify actionable solutions for this area.`
+                });
+            } else if (weakSections.length > 0) {
+                // Regular weakness insight for scores under 50%
+                const weak = weakestSection;
+                insights.push({
+                    type: 'weakness',
+                    icon: '📉',
+                    title: `${weak[0]} Needs Strengthening`,
+                    description: `Your ${weak[0].toLowerCase()} score of ${weak[1]}% suggests this area requires focused improvement to support AI success. Many of these challenges have straightforward solutions - consider a <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-blue-600 hover:text-blue-800 underline">free 30-minute consultation with Voss AI Consulting</a> to explore quick wins and actionable next steps.`
+                });
+            }
             
             // Overall insight
             let overallInsight;
@@ -629,15 +655,22 @@
                 overallInsight = {
                     type: 'opportunity',
                     icon: '📈',
-                    title: 'Solid Foundation with Growth Potential',
-                    description: `Your ${overallScore}% readiness score indicates good potential. Strategic improvements in key areas will position you for AI success.`
+                    title: 'Solid Foundation with Growth Areas',
+                    description: `Your ${overallScore}% readiness score indicates good potential with some areas needing development. Strategic improvements in key areas will position you for AI success.`
+                };
+            } else if (overallScore >= 25) {
+                overallInsight = {
+                    type: 'opportunity',
+                    icon: '🌱',
+                    title: 'Foundational Development Needed',
+                    description: `Your ${overallScore}% score indicates significant opportunity for improvement across multiple areas. This is a teachable moment with tremendous potential for AI transformation as you build foundational capabilities. A <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-blue-600 hover:text-blue-800 underline">free consultation</a> can help prioritize your development efforts.`
                 };
             } else {
                 overallInsight = {
                     type: 'opportunity',
-                    icon: '🏗️',
-                    title: 'Foundation Building Phase',
-                    description: `Your ${overallScore}% score suggests focusing on fundamental readiness areas before pursuing complex AI initiatives will yield the best results.`
+                    icon: '🎓',
+                    title: 'Starting Your AI Journey',
+                    description: `Your ${overallScore}% score means you're at the beginning of your AI readiness journey. This presents an opportunity to build AI capabilities with best practices from the ground up. A <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-blue-600 hover:text-blue-800 underline">free 30-minute consultation</a> can provide a clear roadmap for getting started.`
                 };
             }
             

@@ -45,10 +45,11 @@ function doPost(e) {
       
       // Add headers if this is the first entry
       if (completeSheet.getLastRow() === 0) {
-        completeSheet.getRange(1, 1, 1, 20).setValues([[
+        completeSheet.getRange(1, 1, 1, 26).setValues([[
           'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Role Level', 'Org Size', 'Consent',
           'Overall Score', 'Strategy Score', 'Operations Score', 'Technology Score', 'Data Score', 
-          'Culture Score', 'Automation Score', 'Strategy Priorities', 'Operational Bottlenecks',
+          'Culture Score', 'Automation Score', 'Strategy Open', 'Operations Open', 'Technology Open',
+          'Data Open', 'Culture Open', 'Automation Open', 'Strategy Priorities', 'Operational Bottlenecks',
           'Cultural Barriers', 'Automation Tasks', 'Readiness Level'
         ]]);
       }
@@ -67,16 +68,22 @@ function doPost(e) {
         data.user?.orgSize || data.orgSize || 'No Org Size',
         data.user?.consentMarketing || data.consentMarketing || 'No Consent',
         data.overallScore || 0,
-        data.scores?.strategy || 0,
-        data.scores?.operations || 0,
-        data.scores?.technology || 0,
-        data.scores?.data || 0,
-        data.scores?.culture || 0,
-        data.scores?.automation || 0,
-        data.freeResponses?.strategy_priorities || 'No Strategy Response',
-        data.freeResponses?.ops_bottlenecks || 'No Ops Response',
-        data.freeResponses?.culture_barriers || 'No Culture Response',
-        data.freeResponses?.auto_specific_tasks || 'No Automation Response',
+        data.scores?.strategy || data.strategyScore || 0,
+        data.scores?.operations || data.operationsScore || 0,
+        data.scores?.technology || data.technologyScore || 0,
+        data.scores?.data || data.dataScore || 0,
+        data.scores?.culture || data.cultureScore || 0,
+        data.scores?.automation || data.automationScore || 0,
+        data.freeResponses?.strategy_open || 'No Strategy Open Response',
+        data.freeResponses?.ops_open || 'No Operations Open Response',
+        data.freeResponses?.tech_open || 'No Technology Open Response',
+        data.freeResponses?.data_open || 'No Data Open Response',
+        data.freeResponses?.culture_open || 'No Culture Open Response',
+        data.freeResponses?.auto_open || 'No Automation Open Response',
+        data.freeResponses?.strategy_priorities || data.strategy_priorities || 'No Strategy Priorities',
+        data.freeResponses?.ops_bottlenecks || data.ops_bottlenecks || 'No Ops Bottlenecks',
+        data.freeResponses?.culture_barriers || data.culture_barriers || 'No Culture Barriers',
+        data.freeResponses?.auto_specific_tasks || data.auto_specific_tasks || 'No Automation Tasks',
         data.readinessLevel || 'No Level'
       ]);
     }
