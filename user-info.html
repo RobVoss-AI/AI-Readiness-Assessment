@@ -584,12 +584,18 @@
                     }
                 }
                 
-                updateProgress();
+                // Don't call updateProgress here to avoid infinite loop
                 return isValid;
             }
             
-            field.addEventListener('blur', validate);
-            field.addEventListener('input', validate);
+            field.addEventListener('blur', () => {
+                validate();
+                updateProgress();
+            });
+            field.addEventListener('input', () => {
+                validate();
+                updateProgress();
+            });
             
             return validate;
         }
@@ -635,11 +641,14 @@
                 consentCheckbox.parentNode.parentNode.classList.remove('border-green-200', 'bg-green-50');
             }
             
-            updateProgress();
+            // Don't call updateProgress here to avoid infinite loop
             return isValid;
         }
         
-        consentCheckbox.addEventListener('change', validateConsent);
+        consentCheckbox.addEventListener('change', () => {
+            validateConsent();
+            updateProgress();
+        });
         
         // Update progress bar
         function updateProgress() {
