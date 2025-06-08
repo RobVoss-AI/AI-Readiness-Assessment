@@ -2,14 +2,14 @@
 // Deploy this as a web app with execute permissions set to "Anyone"
 //
 // This script creates two sheets:
-// 1. "User Data" - Stores personal information from user-info.html
-// 2. "Assessment Results" - Stores scores and free responses from results-new.html
+// 1. "User Data" - Temporary storage for personal information from user-info.html
+// 2. "Complete Assessments" - MAIN SHEET with ALL data: user info + scores + free responses
 //
-// Free response questions captured:
-// - Strategy Priorities (strategy_priorities)
-// - Operational Bottlenecks (ops_bottlenecks) 
-// - Cultural Barriers (culture_barriers)
-// - Automation Tasks (auto_specific_tasks)
+// The "Complete Assessments" sheet contains everything in one row per person:
+// - Personal info: Name, Email, Industry, Job Title, Role, Org Size, Consent
+// - Assessment scores: Overall + 6 dimension scores  
+// - Free responses: Strategy Priorities, Operational Bottlenecks, Cultural Barriers, Automation Tasks
+// - Readiness Level: Beginner/Intermediate/Advanced classification
 
 function doPost(e) {
   try {
@@ -17,7 +17,7 @@ function doPost(e) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     
     if (data.type === 'user_data') {
-      // Handle user information from index.html
+      // Store user data temporarily - we'll combine it with assessment results later
       const userSheet = spreadsheet.getSheetByName('User Data') || spreadsheet.insertSheet('User Data');
       
       // Add headers if this is the first entry
@@ -40,26 +40,29 @@ function doPost(e) {
       ]);
       
     } else if (data.type === 'assessment_results') {
-      // Handle assessment results from results.html
-      const resultsSheet = spreadsheet.getSheetByName('Assessment Results') || spreadsheet.insertSheet('Assessment Results');
+      // Create one comprehensive sheet with ALL data
+      const completeSheet = spreadsheet.getSheetByName('Complete Assessments') || spreadsheet.insertSheet('Complete Assessments');
       
       // Add headers if this is the first entry
-      if (resultsSheet.getLastRow() === 0) {
-        resultsSheet.getRange(1, 1, 1, 16).setValues([[
-          'Timestamp', 'Email', 'First Name', 'Industry', 'Role', 'Overall Score', 
-          'Strategy Score', 'Operations Score', 'Technology Score', 'Data Score', 
+      if (completeSheet.getLastRow() === 0) {
+        completeSheet.getRange(1, 1, 1, 20).setValues([[
+          'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Role Level', 'Org Size', 'Consent',
+          'Overall Score', 'Strategy Score', 'Operations Score', 'Technology Score', 'Data Score', 
           'Culture Score', 'Automation Score', 'Strategy Priorities', 'Operational Bottlenecks',
-          'Cultural Barriers', 'Automation Tasks'
+          'Cultural Barriers', 'Automation Tasks', 'Readiness Level'
         ]]);
       }
       
-      // Add results data
-      resultsSheet.appendRow([
+      // Add complete assessment data (user info + results + free responses)
+      completeSheet.appendRow([
         new Date(),
-        data.user?.email || '',
         data.user?.firstName || '',
+        data.user?.email || '',
         data.user?.industry || '',
+        data.user?.jobTitle || '',
         data.user?.role || '',
+        data.user?.orgSize || '',
+        data.user?.consentMarketing || false,
         data.overallScore || 0,
         data.scores?.strategy || 0,
         data.scores?.operations || 0,
@@ -70,7 +73,8 @@ function doPost(e) {
         data.freeResponses?.strategy_priorities || '',
         data.freeResponses?.ops_bottlenecks || '',
         data.freeResponses?.culture_barriers || '',
-        data.freeResponses?.auto_specific_tasks || ''
+        data.freeResponses?.auto_specific_tasks || '',
+        data.readinessLevel || ''
       ]);
     }
     
