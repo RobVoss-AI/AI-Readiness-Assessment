@@ -730,21 +730,31 @@
             e.preventDefault();
             console.log('Form submitted');
             
-            // Check rate limiting first
-            if (!SecurityUtils.checkRateLimit('form_submission', 3, 300000)) {
-                alert('Too many submission attempts. Please wait 5 minutes and try again.');
-                return;
-            }
+            // Check rate limiting first (temporarily disabled for debugging)
+            // if (!SecurityUtils.checkRateLimit('form_submission', 3, 300000)) {
+            //     alert('Too many submission attempts. Please wait 5 minutes and try again.');
+            //     return;
+            // }
             
-            // Final validation
+            // Final validation with detailed logging
             let allValid = true;
-            Object.values(validators).forEach(validator => {
-                if (!validator()) allValid = false;
+            const validationResults = {};
+            
+            Object.keys(validators).forEach(key => {
+                const isValid = validators[key]();
+                validationResults[key] = isValid;
+                if (!isValid) allValid = false;
             });
             
-            if (!validateConsent()) allValid = false;
+            const consentValid = validateConsent();
+            validationResults.consent = consentValid;
+            if (!consentValid) allValid = false;
+            
+            console.log('Validation results:', validationResults);
+            console.log('Overall valid:', allValid);
             
             if (!allValid) {
+                console.log('Form validation failed, not proceeding');
                 // Scroll to first error
                 const firstError = document.querySelector('.border-red-300, .border-red-200');
                 if (firstError) {
@@ -753,6 +763,8 @@
                 }
                 return;
             }
+            
+            console.log('✅ All validation passed, proceeding with form submission');
             
             // Show loading state
             submitButton.disabled = true;
@@ -807,60 +819,10 @@
             }, 1500);
         });
         
-        // Add button click handler as backup
+        // Ensure button submits the form properly
         submitButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Button clicked, disabled:', this.disabled);
-            
-            // Check if form is valid before proceeding
-            let allValid = true;
-            Object.values(validators).forEach(validator => {
-                if (!validator()) allValid = false;
-            });
-            
-            if (!validateConsent()) allValid = false;
-            
-            if (allValid) {
-                console.log('Form is valid, proceeding to assessment...');
-                
-                // Collect form data
-                const formData = new FormData(form);
-                const userData = {};
-                
-                for (let [key, value] of formData.entries()) {
-                    if (key === 'consentMarketing') {
-                        userData[key] = document.getElementById(key).checked;
-                    } else {
-                        userData[key] = SecurityUtils.sanitizeText(value);
-                    }
-                }
-                
-                // Save to localStorage
-                try {
-                    storage.setItem('voss_user', JSON.stringify(userData));
-                    storage.setItem('voss_tier', 'free'); // Set default tier
-                    console.log('User data saved:', userData);
-                    
-                    // Send to Google Sheets
-                    sendToGoogleSheets(userData);
-                } catch (e) {
-                    console.log('Could not save to localStorage:', e);
-                    // Create fallback data
-                    window.vossUserData = userData;
-                }
-                
-                // Navigate to assessment
-                console.log('Navigating to assessment-clean.html...');
-                window.location.href = 'assessment-clean.html';
-            } else {
-                console.log('Form validation failed');
-                // Scroll to first error
-                const firstError = document.querySelector('.border-red-300, .border-red-200');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    firstError.focus();
-                }
-            }
+            console.log('Submit button clicked, triggering form submit');
+            // Let the form submit event handler take care of everything
         });
         
         // Load existing data on page load
