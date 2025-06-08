@@ -77,6 +77,13 @@ class SecurityUtils {
                 sanitized[key] = isNaN(value) ? 0 : value;
             } else if (typeof value === 'boolean') {
                 sanitized[key] = Boolean(value);
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Recursively sanitize nested objects (like scores and freeResponses)
+                sanitized[key] = this.sanitizeForGoogleSheets(value);
+            } else if (Array.isArray(value)) {
+                sanitized[key] = value.map(item => 
+                    typeof item === 'object' ? this.sanitizeForGoogleSheets(item) : item
+                );
             } else {
                 sanitized[key] = String(value);
             }
