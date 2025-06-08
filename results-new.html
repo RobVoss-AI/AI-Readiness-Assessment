@@ -447,9 +447,19 @@
         async function sendResultsToGoogleSheets() {
             const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvfFMWKg81dAZEIO41_GmB724eCpraCBYjloziHye_9Aun-Jn7xBuf2L5QmgzfQu-j/exec";
             
+            // Get assessment answers to extract free responses
+            const answers = JSON.parse(storage.getItem("voss_answers") || "{}");
+            const freeResponses = {
+                strategy_priorities: answers.strategy_priorities || '',
+                ops_bottlenecks: answers.ops_bottlenecks || '',
+                culture_barriers: answers.culture_barriers || '',
+                auto_specific_tasks: answers.auto_specific_tasks || ''
+            };
+            
             console.log('🚀 Attempting to send results to Google Sheets...');
             console.log('User data:', userData);
             console.log('Scores:', { strategy: strategyScore, operations: operationsScore, technology: technologyScore, data: dataScore, culture: cultureScore, automation: automationScore });
+            console.log('Free responses:', freeResponses);
             
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -469,6 +479,7 @@
                             culture: cultureScore,
                             automation: automationScore
                         },
+                        freeResponses: freeResponses,
                         overallScore: overallScore,
                         readinessLevel: readinessLevel,
                         tier: 'free',

@@ -812,26 +812,37 @@
             e.preventDefault();
             console.log('Button clicked, disabled:', this.disabled);
             
-            // For testing - bypass validation temporarily
-            if (true) { // Change this to check validation later
-                console.log('Proceeding to assessment...');
+            // Check if form is valid before proceeding
+            let allValid = true;
+            Object.values(validators).forEach(validator => {
+                if (!validator()) allValid = false;
+            });
+            
+            if (!validateConsent()) allValid = false;
+            
+            if (allValid) {
+                console.log('Form is valid, proceeding to assessment...');
                 
-                // Create minimal user data to prevent assessment page errors
-                const userData = {
-                    firstName: document.getElementById('firstName').value || 'Test User',
-                    email: document.getElementById('email').value || 'test@example.com',
-                    industry: document.getElementById('industry').value || 'Technology',
-                    jobTitle: document.getElementById('jobTitle').value || 'Manager',
-                    role: document.getElementById('role').value || 'Manager',
-                    orgSize: document.getElementById('orgSize').value || '',
-                    consentMarketing: document.getElementById('consentMarketing').checked || false
-                };
+                // Collect form data
+                const formData = new FormData(form);
+                const userData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    if (key === 'consentMarketing') {
+                        userData[key] = document.getElementById(key).checked;
+                    } else {
+                        userData[key] = SecurityUtils.sanitizeText(value);
+                    }
+                }
                 
                 // Save to localStorage
                 try {
                     storage.setItem('voss_user', JSON.stringify(userData));
                     storage.setItem('voss_tier', 'free'); // Set default tier
                     console.log('User data saved:', userData);
+                    
+                    // Send to Google Sheets
+                    sendToGoogleSheets(userData);
                 } catch (e) {
                     console.log('Could not save to localStorage:', e);
                     // Create fallback data
@@ -841,6 +852,14 @@
                 // Navigate to assessment
                 console.log('Navigating to assessment-clean.html...');
                 window.location.href = 'assessment-clean.html';
+            } else {
+                console.log('Form validation failed');
+                // Scroll to first error
+                const firstError = document.querySelector('.border-red-300, .border-red-200');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
             }
         });
         
