@@ -488,6 +488,14 @@
                     body: JSON.stringify(SecurityUtils.sanitizeForGoogleSheets({
                         type: 'assessment_results',
                         user: userData,
+                        // Also include user data at root level for compatibility
+                        firstName: userData.firstName,
+                        email: userData.email,
+                        industry: userData.industry,
+                        jobTitle: userData.jobTitle,
+                        role: userData.role,
+                        orgSize: userData.orgSize,
+                        consentMarketing: userData.consentMarketing,
                         scores: {
                             strategy: strategyScore,
                             operations: operationsScore,
