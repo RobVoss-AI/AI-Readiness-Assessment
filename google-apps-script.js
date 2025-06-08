@@ -55,8 +55,22 @@ function doPost(e) {
       }
       
       // Add complete assessment data (user info + results + free responses)
-      // Add some debugging to help troubleshoot
-      console.log('Assessment data received:', JSON.stringify(data, null, 2));
+      // Add comprehensive debugging to help troubleshoot
+      console.log('=== DEBUGGING ASSESSMENT DATA ===');
+      console.log('Full data object:', JSON.stringify(data, null, 2));
+      console.log('Data type:', data.type);
+      console.log('User data structure:', data.user);
+      console.log('Scores structure:', data.scores);
+      console.log('FreeResponses structure:', data.freeResponses);
+      console.log('Individual score checks:');
+      console.log('  data.scores?.strategy:', data.scores?.strategy);
+      console.log('  data.strategyScore:', data.strategyScore);
+      console.log('  data.scores?.operations:', data.scores?.operations);
+      console.log('  data.operationsScore:', data.operationsScore);
+      console.log('Free response checks:');
+      console.log('  data.freeResponses?.strategy_open:', data.freeResponses?.strategy_open);
+      console.log('  data.freeResponses?.ops_open:', data.freeResponses?.ops_open);
+      console.log('=== END DEBUGGING ===');
       
       completeSheet.appendRow([
         new Date(),

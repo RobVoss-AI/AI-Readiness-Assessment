@@ -312,8 +312,16 @@
         let scores = null;
         
         try {
+            console.log('=== LOADING DATA FROM STORAGE ===');
+            console.log('Raw voss_user from storage:', storage.getItem("voss_user"));
+            console.log('Raw voss_scores from storage:', storage.getItem("voss_scores"));
+            console.log('Raw voss_answers from storage:', storage.getItem("voss_answers"));
+            
             userData = JSON.parse(storage.getItem("voss_user") || "null");
             scores = JSON.parse(storage.getItem("voss_scores") || "null");
+            
+            console.log('Parsed userData:', userData);
+            console.log('Parsed scores:', scores);
         } catch (e) {
             console.error('Error parsing data:', e);
         }
@@ -464,11 +472,21 @@
             };
             
             console.log('🚀 Attempting to send results to Google Sheets...');
+            console.log('=== RESULTS PAGE DEBUGGING ===');
+            console.log('Raw scores object from storage:', scores);
+            console.log('Individual score variables:');
+            console.log('  strategyScore:', strategyScore);
+            console.log('  operationsScore:', operationsScore);
+            console.log('  technologyScore:', technologyScore);
+            console.log('  dataScore:', dataScore);
+            console.log('  cultureScore:', cultureScore);
+            console.log('  automationScore:', automationScore);
+            console.log('  overallScore:', overallScore);
             console.log('User data:', userData);
             console.log('User data type:', typeof userData);
             console.log('User data keys:', Object.keys(userData || {}));
-            console.log('Scores:', { strategy: strategyScore, operations: operationsScore, technology: technologyScore, data: dataScore, culture: cultureScore, automation: automationScore });
-            console.log('Free responses:', freeResponses);
+            console.log('Raw answers from storage:', answers);
+            console.log('Free responses constructed:', freeResponses);
             console.log('Full payload being sent:', {
                 type: 'assessment_results',
                 user: userData,
