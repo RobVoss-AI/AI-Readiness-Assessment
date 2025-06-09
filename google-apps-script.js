@@ -13,30 +13,22 @@
 
 function doPost(e) {
   try {
-    // Add debugging for the event object
-    console.log('=== EVENT DEBUGGING ===');
-    console.log('Event object e:', e);
-    console.log('e type:', typeof e);
-    console.log('e keys:', e ? Object.keys(e) : 'e is null/undefined');
-    console.log('e.postData:', e ? e.postData : 'e is null/undefined');
-    console.log('e.postData type:', e && e.postData ? typeof e.postData : 'postData is null/undefined');
+    // Simplified approach - handle both undefined event and valid event
+    let data;
     
-    if (!e) {
-      throw new Error('Event object is undefined');
+    if (!e || !e.postData || !e.postData.contents) {
+      // Fallback: create dummy data for testing
+      console.log('Event object issue - creating test entry');
+      data = {
+        type: 'test_entry',
+        timestamp: new Date().toISOString(),
+        note: 'Event object was undefined'
+      };
+    } else {
+      console.log('Received valid POST data');
+      data = JSON.parse(e.postData.contents);
     }
     
-    if (!e.postData) {
-      throw new Error('postData is undefined - this might be a GET request instead of POST');
-    }
-    
-    if (!e.postData.contents) {
-      throw new Error('postData.contents is undefined');
-    }
-    
-    console.log('postData.contents:', e.postData.contents);
-    console.log('=== END EVENT DEBUGGING ===');
-    
-    const data = JSON.parse(e.postData.contents);
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     
     if (data.type === 'user_data') {
@@ -63,66 +55,47 @@ function doPost(e) {
       ]);
       
     } else if (data.type === 'assessment_results') {
-      // Create one comprehensive sheet with ALL data
-      const completeSheet = spreadsheet.getSheetByName('Complete Assessments') || spreadsheet.insertSheet('Complete Assessments');
+      // Simple text responses sheet - focus on getting the text data
+      const textSheet = spreadsheet.getSheetByName('Text Responses') || spreadsheet.insertSheet('Text Responses');
       
       // Add headers if this is the first entry
-      if (completeSheet.getLastRow() === 0) {
-        completeSheet.getRange(1, 1, 1, 26).setValues([[
-          'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Role Level', 'Org Size', 'Consent',
-          'Overall Score', 'Strategy Score', 'Operations Score', 'Technology Score', 'Data Score', 
-          'Culture Score', 'Automation Score', 'Strategy Open', 'Operations Open', 'Technology Open',
-          'Data Open', 'Culture Open', 'Automation Open', 'Strategy Priorities', 'Operational Bottlenecks',
-          'Cultural Barriers', 'Automation Tasks', 'Readiness Level'
+      if (textSheet.getLastRow() === 0) {
+        textSheet.getRange(1, 1, 1, 12).setValues([[
+          'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Strategy Open', 'Operations Open', 
+          'Technology Open', 'Data Open', 'Culture Open', 'Automation Open', 'Overall Score'
         ]]);
       }
       
-      // Add complete assessment data (user info + results + free responses)
-      // Add comprehensive debugging to help troubleshoot
-      console.log('=== DEBUGGING ASSESSMENT DATA ===');
-      console.log('Full data object:', JSON.stringify(data, null, 2));
-      console.log('Data type:', data.type);
-      console.log('User data structure:', data.user);
-      console.log('Scores structure:', data.scores);
-      console.log('FreeResponses structure:', data.freeResponses);
-      console.log('Individual score checks:');
-      console.log('  data.scores?.strategy:', data.scores?.strategy);
-      console.log('  data.strategyScore:', data.strategyScore);
-      console.log('  data.scores?.operations:', data.scores?.operations);
-      console.log('  data.operationsScore:', data.operationsScore);
-      console.log('Free response checks:');
-      console.log('  data.freeResponses?.strategy_open:', data.freeResponses?.strategy_open);
-      console.log('  data.freeResponses?.ops_open:', data.freeResponses?.ops_open);
-      console.log('=== END DEBUGGING ===');
+      // Simple logging to see what we're getting
+      console.log('Processing text responses');
+      console.log('User data:', data.user);
+      console.log('Free responses:', data.freeResponses);
       
-      completeSheet.appendRow([
-        new Date(),                                                              // 1. Timestamp
-        data.user?.firstName || data.firstName || 'No Name',                    // 2. First Name  
-        data.user?.email || data.email || 'No Email',                          // 3. Email
-        data.user?.industry || data.industry || 'No Industry',                 // 4. Industry
-        data.user?.jobTitle || data.jobTitle || 'No Job Title',                // 5. Job Title
-        data.user?.role || data.role || 'No Role',                             // 6. Role Level
-        data.user?.orgSize || data.orgSize || 'No Org Size',                   // 7. Org Size
-        data.user?.consentMarketing || data.consentMarketing || 'No Consent',  // 8. Consent
-        data.overallScore || 0,                                                 // 9. Overall Score
-        data.scores?.strategy || data.strategyScore || 0,                       // 10. Strategy Score
-        data.scores?.operations || data.operationsScore || 0,                  // 11. Operations Score
-        data.scores?.technology || data.technologyScore || 0,                  // 12. Technology Score
-        data.scores?.data || data.dataScore || 0,                              // 13. Data Score
-        data.scores?.culture || data.cultureScore || 0,                        // 14. Culture Score
-        data.scores?.automation || data.automationScore || 0,                  // 15. Automation Score
-        data.freeResponses?.strategy_open || '',                               // 16. Strategy Open
-        data.freeResponses?.ops_open || '',                                    // 17. Operations Open  
-        data.freeResponses?.tech_open || '',                                   // 18. Technology Open
-        data.freeResponses?.data_open || '',                                   // 19. Data Open
-        data.freeResponses?.culture_open || '',                                // 20. Culture Open
-        data.freeResponses?.auto_open || '',                                   // 21. Automation Open
-        data.freeResponses?.strategy_priorities || data.strategy_priorities || '', // 22. Strategy Priorities
-        data.freeResponses?.ops_bottlenecks || data.ops_bottlenecks || '',        // 23. Operational Bottlenecks
-        data.freeResponses?.culture_barriers || data.culture_barriers || '',     // 24. Cultural Barriers
-        data.freeResponses?.auto_specific_tasks || data.auto_specific_tasks || '', // 25. Automation Tasks
-        data.readinessLevel || 'No Level'                                       // 26. Readiness Level
+      // Add just the essential data including email
+      textSheet.appendRow([
+        new Date(),                                           // 1. Timestamp
+        data.user?.firstName || data.firstName || 'Unknown', // 2. First Name
+        data.user?.email || data.email || 'No Email',        // 3. Email
+        data.user?.industry || data.industry || 'Unknown',   // 4. Industry
+        data.user?.jobTitle || data.jobTitle || 'Unknown',   // 5. Job Title
+        data.freeResponses?.strategy_open || '',              // 6. Strategy Open
+        data.freeResponses?.ops_open || '',                   // 7. Operations Open
+        data.freeResponses?.tech_open || '',                  // 8. Technology Open
+        data.freeResponses?.data_open || '',                  // 9. Data Open
+        data.freeResponses?.culture_open || '',               // 10. Culture Open
+        data.freeResponses?.auto_open || '',                  // 11. Automation Open
+        data.overallScore || 0                                // 12. Overall Score
       ]);
+      
+    } else if (data.type === 'test_entry') {
+      // Handle test entries when event object is undefined
+      const testSheet = spreadsheet.getSheetByName('Debug Log') || spreadsheet.insertSheet('Debug Log');
+      
+      if (testSheet.getLastRow() === 0) {
+        testSheet.getRange(1, 1, 1, 3).setValues([['Timestamp', 'Issue', 'Status']]);
+      }
+      
+      testSheet.appendRow([new Date(), data.note, 'Event object was undefined - check deployment']);
     }
     
     return ContentService
