@@ -111,13 +111,63 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  console.log('=== GET REQUEST RECEIVED ===');
-  console.log('GET event object e:', e);
-  console.log('GET e type:', typeof e);
-  console.log('GET e keys:', e ? Object.keys(e) : 'e is null/undefined');
-  console.log('=== END GET DEBUGGING ===');
-  
-  return ContentService
-    .createTextOutput(JSON.stringify({message: 'Voss AI Scorecard Data Collection API - This should be a POST request!'}))
-    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    console.log('=== GET REQUEST RECEIVED ===');
+    console.log('GET event object e:', e);
+    console.log('Parameters:', e ? e.parameter : 'no parameters');
+    
+    if (!e || !e.parameter) {
+      return ContentService
+        .createTextOutput(JSON.stringify({message: 'Voss AI Scorecard Data Collection API'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    const params = e.parameter;
+    console.log('All parameters:', params);
+    
+    if (params.type === 'assessment_results') {
+      const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      const textSheet = spreadsheet.getSheetByName('Text Responses') || spreadsheet.insertSheet('Text Responses');
+      
+      // Add headers if this is the first entry
+      if (textSheet.getLastRow() === 0) {
+        textSheet.getRange(1, 1, 1, 12).setValues([[
+          'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Strategy Open', 'Operations Open', 
+          'Technology Open', 'Data Open', 'Culture Open', 'Automation Open', 'Overall Score'
+        ]]);
+      }
+      
+      console.log('Adding text response data from GET parameters');
+      
+      // Add the data from URL parameters
+      textSheet.appendRow([
+        new Date(),
+        params.firstName || 'Unknown',
+        params.email || 'No Email',
+        params.industry || 'Unknown',
+        params.jobTitle || 'Unknown',
+        params.strategyOpen || '',
+        params.opsOpen || '',
+        params.techOpen || '',
+        params.dataOpen || '',
+        params.cultureOpen || '',
+        params.autoOpen || '',
+        params.overallScore || 0
+      ]);
+      
+      return ContentService
+        .createTextOutput(JSON.stringify({success: true, message: 'Text responses saved via GET'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({message: 'Unknown request type'}))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('GET Error:', error);
+    return ContentService
+      .createTextOutput(JSON.stringify({success: false, error: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
