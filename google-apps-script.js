@@ -13,6 +13,29 @@
 
 function doPost(e) {
   try {
+    // Add debugging for the event object
+    console.log('=== EVENT DEBUGGING ===');
+    console.log('Event object e:', e);
+    console.log('e type:', typeof e);
+    console.log('e keys:', e ? Object.keys(e) : 'e is null/undefined');
+    console.log('e.postData:', e ? e.postData : 'e is null/undefined');
+    console.log('e.postData type:', e && e.postData ? typeof e.postData : 'postData is null/undefined');
+    
+    if (!e) {
+      throw new Error('Event object is undefined');
+    }
+    
+    if (!e.postData) {
+      throw new Error('postData is undefined - this might be a GET request instead of POST');
+    }
+    
+    if (!e.postData.contents) {
+      throw new Error('postData.contents is undefined');
+    }
+    
+    console.log('postData.contents:', e.postData.contents);
+    console.log('=== END EVENT DEBUGGING ===');
+    
     const data = JSON.parse(e.postData.contents);
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     
@@ -73,32 +96,32 @@ function doPost(e) {
       console.log('=== END DEBUGGING ===');
       
       completeSheet.appendRow([
-        new Date(),
-        data.user?.firstName || data.firstName || 'No Name',
-        data.user?.email || data.email || 'No Email', 
-        data.user?.industry || data.industry || 'No Industry',
-        data.user?.jobTitle || data.jobTitle || 'No Job Title',
-        data.user?.role || data.role || 'No Role',
-        data.user?.orgSize || data.orgSize || 'No Org Size',
-        data.user?.consentMarketing || data.consentMarketing || 'No Consent',
-        data.overallScore || 0,
-        data.scores?.strategy || data.strategyScore || 0,
-        data.scores?.operations || data.operationsScore || 0,
-        data.scores?.technology || data.technologyScore || 0,
-        data.scores?.data || data.dataScore || 0,
-        data.scores?.culture || data.cultureScore || 0,
-        data.scores?.automation || data.automationScore || 0,
-        data.freeResponses?.strategy_open || 'No Strategy Open Response',
-        data.freeResponses?.ops_open || 'No Operations Open Response',
-        data.freeResponses?.tech_open || 'No Technology Open Response',
-        data.freeResponses?.data_open || 'No Data Open Response',
-        data.freeResponses?.culture_open || 'No Culture Open Response',
-        data.freeResponses?.auto_open || 'No Automation Open Response',
-        data.freeResponses?.strategy_priorities || data.strategy_priorities || 'No Strategy Priorities',
-        data.freeResponses?.ops_bottlenecks || data.ops_bottlenecks || 'No Ops Bottlenecks',
-        data.freeResponses?.culture_barriers || data.culture_barriers || 'No Culture Barriers',
-        data.freeResponses?.auto_specific_tasks || data.auto_specific_tasks || 'No Automation Tasks',
-        data.readinessLevel || 'No Level'
+        new Date(),                                                              // 1. Timestamp
+        data.user?.firstName || data.firstName || 'No Name',                    // 2. First Name  
+        data.user?.email || data.email || 'No Email',                          // 3. Email
+        data.user?.industry || data.industry || 'No Industry',                 // 4. Industry
+        data.user?.jobTitle || data.jobTitle || 'No Job Title',                // 5. Job Title
+        data.user?.role || data.role || 'No Role',                             // 6. Role Level
+        data.user?.orgSize || data.orgSize || 'No Org Size',                   // 7. Org Size
+        data.user?.consentMarketing || data.consentMarketing || 'No Consent',  // 8. Consent
+        data.overallScore || 0,                                                 // 9. Overall Score
+        data.scores?.strategy || data.strategyScore || 0,                       // 10. Strategy Score
+        data.scores?.operations || data.operationsScore || 0,                  // 11. Operations Score
+        data.scores?.technology || data.technologyScore || 0,                  // 12. Technology Score
+        data.scores?.data || data.dataScore || 0,                              // 13. Data Score
+        data.scores?.culture || data.cultureScore || 0,                        // 14. Culture Score
+        data.scores?.automation || data.automationScore || 0,                  // 15. Automation Score
+        data.freeResponses?.strategy_open || '',                               // 16. Strategy Open
+        data.freeResponses?.ops_open || '',                                    // 17. Operations Open  
+        data.freeResponses?.tech_open || '',                                   // 18. Technology Open
+        data.freeResponses?.data_open || '',                                   // 19. Data Open
+        data.freeResponses?.culture_open || '',                                // 20. Culture Open
+        data.freeResponses?.auto_open || '',                                   // 21. Automation Open
+        data.freeResponses?.strategy_priorities || data.strategy_priorities || '', // 22. Strategy Priorities
+        data.freeResponses?.ops_bottlenecks || data.ops_bottlenecks || '',        // 23. Operational Bottlenecks
+        data.freeResponses?.culture_barriers || data.culture_barriers || '',     // 24. Cultural Barriers
+        data.freeResponses?.auto_specific_tasks || data.auto_specific_tasks || '', // 25. Automation Tasks
+        data.readinessLevel || 'No Level'                                       // 26. Readiness Level
       ]);
     }
     
@@ -115,7 +138,13 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  console.log('=== GET REQUEST RECEIVED ===');
+  console.log('GET event object e:', e);
+  console.log('GET e type:', typeof e);
+  console.log('GET e keys:', e ? Object.keys(e) : 'e is null/undefined');
+  console.log('=== END GET DEBUGGING ===');
+  
   return ContentService
-    .createTextOutput(JSON.stringify({message: 'Voss AI Scorecard Data Collection API'}))
+    .createTextOutput(JSON.stringify({message: 'Voss AI Scorecard Data Collection API - This should be a POST request!'}))
     .setMimeType(ContentService.MimeType.JSON);
 }
