@@ -453,7 +453,7 @@
         
         // Send results to Google Sheets
         async function sendResultsToGoogleSheets() {
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzX_ptmS-NQORx-tFSq-oeeYthF4z9SV0wdBs6cnAfACPm4hyGHlDlUtbLiXjGIIqpb/exec";
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0wRTBBCTCxBzngkckp7P4MGY9aybecpudFpvDRrAeqkciIWRjUMlisjapYLr3Afpp/exec";
             
             // Get assessment answers to extract free responses
             const answers = JSON.parse(storage.getItem("voss_answers") || "{}");
