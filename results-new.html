@@ -464,11 +464,11 @@
                 data_open: answers.data_open || '',
                 culture_open: answers.culture_open || '',
                 auto_open: answers.auto_open || '',
-                // Legacy support for older question names
-                strategy_priorities: answers.strategy_priorities || '',
-                ops_bottlenecks: answers.ops_bottlenecks || '',
-                culture_barriers: answers.culture_barriers || '',
-                auto_specific_tasks: answers.auto_specific_tasks || ''
+                // Legacy support for older question names (map them to the current answers)
+                strategy_priorities: answers.strategy_open || '',
+                ops_bottlenecks: answers.ops_open || '',
+                culture_barriers: answers.culture_open || '',
+                auto_specific_tasks: answers.auto_open || ''
             };
             
             console.log('🚀 Attempting to send results to Google Sheets...');
