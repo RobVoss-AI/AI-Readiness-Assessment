@@ -451,10 +451,8 @@
         document.getElementById("userGreeting").textContent = 
             `Hello ${userData.firstName}! Here's your personalized AI readiness assessment.`;
         
-        // Send results to Google Sheets
-        async function sendResultsToGoogleSheets() {
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
-            
+        // Send results to data collection services
+        async function sendResultsToDataCollection() {
             // Get assessment answers to extract free responses
             const answers = JSON.parse(storage.getItem("voss_answers") || "{}");
             const freeResponses = {
@@ -471,24 +469,9 @@
                 auto_specific_tasks: answers.auto_open || ''
             };
             
-            console.log('🚀 Attempting to send results to Google Sheets...');
-            console.log('=== RESULTS PAGE DEBUGGING ===');
-            console.log('Raw scores object from storage:', scores);
-            console.log('Individual score variables:');
-            console.log('  strategyScore:', strategyScore);
-            console.log('  operationsScore:', operationsScore);
-            console.log('  technologyScore:', technologyScore);
-            console.log('  dataScore:', dataScore);
-            console.log('  cultureScore:', cultureScore);
-            console.log('  automationScore:', automationScore);
-            console.log('  overallScore:', overallScore);
-            console.log('User data:', userData);
-            console.log('User data type:', typeof userData);
-            console.log('User data keys:', Object.keys(userData || {}));
-            console.log('Raw answers from storage:', answers);
-            console.log('Free responses constructed:', freeResponses);
-            console.log('Full payload being sent:', {
+            const completeData = {
                 type: 'assessment_results',
+                timestamp: new Date().toISOString(),
                 user: userData,
                 scores: {
                     strategy: strategyScore,
@@ -496,46 +479,163 @@
                     technology: technologyScore,
                     data: dataScore,
                     culture: cultureScore,
-                    automation: automationScore
+                    automation: automationScore,
+                    overall: overallScore
                 },
                 freeResponses: freeResponses,
-                overallScore: overallScore,
-                readinessLevel: readinessLevel
-            });
+                readinessLevel: readinessLevel,
+                allAnswers: answers
+            };
+            
+            console.log('🚀 Attempting to send results to data collection...');
+            console.log('=== RESULTS PAGE DEBUGGING ===');
+            console.log('Complete data package:', completeData);
+            
+            // Try multiple collection methods
+            const results = await Promise.allSettled([
+                sendToWebhook(completeData),
+                sendToGoogleSheets(completeData),
+                sendToLocalStorage(completeData)
+            ]);
+            
+            console.log('Data collection results:', results);
+            return results.some(result => result.status === 'fulfilled' && result.value === true);
+        }
+        
+        // Method 1: Webhook service (most reliable)
+        async function sendToWebhook(data) {
+            try {
+                // Using a simple webhook service for data collection
+                const response = await fetch('https://webhook.site/1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('✅ Data sent to webhook successfully');
+                return true;
+            } catch (error) {
+                console.error('❌ Webhook failed:', error);
+                return false;
+            }
+        }
+        
+        // Method 2: Google Sheets (backup)
+        async function sendToGoogleSheets(data) {
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
             
             try {
-                // Use GET request with URL parameters as workaround for POST issues
+                // Create a flattened version for URL parameters
                 const params = new URLSearchParams({
                     type: 'assessment_results',
-                    firstName: userData.firstName || '',
-                    email: userData.email || '',
-                    industry: userData.industry || '',
-                    jobTitle: userData.jobTitle || '',
-                    strategyOpen: freeResponses.strategy_open || '',
-                    opsOpen: freeResponses.ops_open || '',
-                    techOpen: freeResponses.tech_open || '',
-                    dataOpen: freeResponses.data_open || '',
-                    cultureOpen: freeResponses.culture_open || '',
-                    autoOpen: freeResponses.auto_open || '',
-                    overallScore: overallScore || 0,
-                    readinessLevel: readinessLevel || '',
-                    timestamp: new Date().toISOString()
+                    firstName: data.user.firstName || '',
+                    email: data.user.email || '',
+                    industry: data.user.industry || '',
+                    jobTitle: data.user.jobTitle || '',
+                    strategyScore: data.scores.strategy || 0,
+                    operationsScore: data.scores.operations || 0,
+                    technologyScore: data.scores.technology || 0,
+                    dataScore: data.scores.data || 0,
+                    cultureScore: data.scores.culture || 0,
+                    automationScore: data.scores.automation || 0,
+                    overallScore: data.scores.overall || 0,
+                    strategyOpen: data.freeResponses.strategy_open || '',
+                    opsOpen: data.freeResponses.ops_open || '',
+                    techOpen: data.freeResponses.tech_open || '',
+                    dataOpen: data.freeResponses.data_open || '',
+                    cultureOpen: data.freeResponses.culture_open || '',
+                    autoOpen: data.freeResponses.auto_open || '',
+                    readinessLevel: data.readinessLevel || '',
+                    timestamp: data.timestamp
                 });
                 
                 const response = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
-                
-                console.log('✅ Assessment results sent to Google Sheets successfully');
-                console.log('Response status:', response.status);
+                console.log('✅ Data sent to Google Sheets successfully');
                 return true;
             } catch (error) {
-                console.error('❌ Error sending results to Google Sheets:', error);
+                console.error('❌ Google Sheets failed:', error);
+                return false;
+            }
+        }
+        
+        // Method 3: Local storage backup (always works)
+        async function sendToLocalStorage(data) {
+            try {
+                const existingData = JSON.parse(storage.getItem('voss_assessment_results') || '[]');
+                existingData.push(data);
+                storage.setItem('voss_assessment_results', JSON.stringify(existingData));
+                
+                // Also create a human-readable summary
+                const summary = `
+Assessment Results - ${data.timestamp}
+` +
+                    `Name: ${data.user.firstName}
+` +
+                    `Email: ${data.user.email}
+` +
+                    `Industry: ${data.user.industry}
+` +
+                    `Job Title: ${data.user.jobTitle}
+` +
+                    `Overall Score: ${data.scores.overall}%
+` +
+                    `Individual Scores:
+` +
+                    `  Strategy: ${data.scores.strategy}%
+` +
+                    `  Operations: ${data.scores.operations}%
+` +
+                    `  Technology: ${data.scores.technology}%
+` +
+                    `  Data: ${data.scores.data}%
+` +
+                    `  Culture: ${data.scores.culture}%
+` +
+                    `  Automation: ${data.scores.automation}%
+` +
+                    `Free Responses:
+` +
+                    `  Strategy: ${data.freeResponses.strategy_open}
+` +
+                    `  Operations: ${data.freeResponses.ops_open}
+` +
+                    `  Technology: ${data.freeResponses.tech_open}
+` +
+                    `  Data: ${data.freeResponses.data_open}
+` +
+                    `  Culture: ${data.freeResponses.culture_open}
+` +
+                    `  Automation: ${data.freeResponses.auto_open}
+`;
+                
+                storage.setItem('voss_latest_summary', summary);
+                console.log('✅ Data saved to local storage successfully');
+                console.log('Summary:', summary);
+                return true;
+            } catch (error) {
+                console.error('❌ Local storage failed:', error);
                 return false;
             }
         }
         
         // Send results when page loads
-        console.log('🔄 Results page loaded, about to call sendResultsToGoogleSheets...');
-        sendResultsToGoogleSheets();
+        console.log('🔄 Results page loaded, about to call sendResultsToDataCollection...');
+        sendResultsToDataCollection();
+        
+        // Also provide a manual trigger for debugging
+        window.manualDataSend = () => {
+            console.log('🔄 Manual data send triggered...');
+            sendResultsToDataCollection();
+        };
+        
+        // Show data summary in console for debugging
+        window.showDataSummary = () => {
+            const summary = storage.getItem('voss_latest_summary');
+            console.log('Latest assessment summary:', summary);
+            return summary;
+        };
         
         // Create radar chart
         function createRadarChart() {

@@ -37,7 +37,10 @@ The AI Readiness Assessment helps organizations understand their current AI matu
 
 ### **Data Flow**
 ```
-User Input → Sanitization → Local Storage → Google Apps Script → Google Sheets
+User Input → Sanitization → Local Storage → Multiple Collection Methods:
+├── Google Apps Script → Google Sheets (Primary)
+├── Webhook Service → External Database (Backup)
+└── Local Storage → Export Utility (Failsafe)
 ```
 
 ### **Security Stack**
@@ -53,10 +56,13 @@ User Input → Sanitization → Local Storage → Google Apps Script → Google 
 ├── index.html                         # User info collection
 ├── assessment-clean.html              # Main assessment (6 sections)
 ├── results-new.html                  # Results with radar chart
+├── data-export.html                  # Data export utility
+├── test-data-collection.html         # Testing data collection
 ├── privacy-policy.html               # GDPR-compliant privacy policy
 ├── terms-of-service.html             # Legal terms and conditions
 ├── security-utils.js                 # Security utilities
 ├── security-monitor.js               # Real-time security monitoring
+├── google-apps-script.js             # Google Sheets backend script
 ├── .htaccess                         # Server security headers
 └── README.md                         # This file
 ```
@@ -83,12 +89,25 @@ User Input → Sanitization → Local Storage → Google Apps Script → Google 
 
 ## ⚙️ Configuration
 
-### **Google Sheets Integration**
-1. Create Google Apps Script
-2. Deploy as web app with permissions
-3. Update `GOOGLE_SCRIPT_URL` in:
-   - `index.html` (line ~690)
-   - `results-new.html` (line ~438)
+### **Data Collection Setup**
+
+#### **Google Sheets Integration (Primary)**
+1. Create new Google Apps Script project
+2. Copy contents from `google-apps-script.js`
+3. Deploy as web app with permissions set to "Anyone"
+4. Update `GOOGLE_SCRIPT_URL` in:
+   - `user-info.html` (line ~710)
+   - `results-new.html` (line ~456)
+
+#### **Data Export & Testing**
+- Access `data-export.html` to view/export collected data
+- Use `test-data-collection.html` to verify data collection works
+- Check browser console for debugging information
+
+#### **Backup Collection Methods**
+- Local storage always saves data as backup
+- Webhook service can be configured for external collection
+- Multiple collection methods ensure no data loss
 
 ### **Customization**
 - **Branding**: Update logos and colors in CSS

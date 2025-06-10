@@ -704,13 +704,25 @@
             autoSaveTimer = setTimeout(autoSave, 2000);
         });
         
-        // Send data to Google Sheets
-        async function sendToGoogleSheets(userData) {
-            // Replace with your Google Apps Script Web App URL
+        // Send data to collection services
+        async function sendToDataCollection(userData) {
             const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
             
-            console.log('📝 Sending user data to Google Sheets...');
+            console.log('📝 Sending user data to data collection...');
             console.log('User data:', userData);
+            
+            // Try multiple collection methods
+            const results = await Promise.allSettled([
+                sendUserToGoogleSheets(userData),
+                saveUserDataLocally(userData)
+            ]);
+            
+            console.log('User data collection results:', results);
+            return results.some(result => result.status === 'fulfilled' && result.value === true);
+        }
+        
+        async function sendUserToGoogleSheets(userData) {
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
             
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -729,6 +741,23 @@
                 return true;
             } catch (error) {
                 console.error('❌ Error sending user data to Google Sheets:', error);
+                return false;
+            }
+        }
+        
+        async function saveUserDataLocally(userData) {
+            try {
+                const dataWithTimestamp = {
+                    ...userData,
+                    timestamp: new Date().toISOString(),
+                    type: 'user_data'
+                };
+                
+                storage.setItem('voss_user_backup', JSON.stringify(dataWithTimestamp));
+                console.log('✅ User data saved locally successfully');
+                return true;
+            } catch (error) {
+                console.error('❌ Error saving user data locally:', error);
                 return false;
             }
         }
@@ -807,9 +836,9 @@
             storage.setItem('voss_tier', tier);
             storage.removeItem('voss_user_draft'); // Clean up draft
             
-            // Send to Google Sheets (async, doesn't block flow)
-            console.log('🔄 About to call sendToGoogleSheets...');
-            sendToGoogleSheets(userData);
+            // Send to data collection (async, doesn't block flow)
+            console.log('🔄 About to call sendToDataCollection...');
+            sendToDataCollection(userData);
             
             // Simulate processing time for better UX
             setTimeout(() => {

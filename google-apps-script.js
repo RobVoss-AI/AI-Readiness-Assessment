@@ -55,37 +55,9 @@ function doPost(e) {
       ]);
       
     } else if (data.type === 'assessment_results') {
-      // Simple text responses sheet - focus on getting the text data
-      const textSheet = spreadsheet.getSheetByName('Text Responses') || spreadsheet.insertSheet('Text Responses');
-      
-      // Add headers if this is the first entry
-      if (textSheet.getLastRow() === 0) {
-        textSheet.getRange(1, 1, 1, 12).setValues([[
-          'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Strategy Open', 'Operations Open', 
-          'Technology Open', 'Data Open', 'Culture Open', 'Automation Open', 'Overall Score'
-        ]]);
-      }
-      
-      // Simple logging to see what we're getting
-      console.log('Processing text responses');
-      console.log('User data:', data.user);
-      console.log('Free responses:', data.freeResponses);
-      
-      // Add just the essential data including email
-      textSheet.appendRow([
-        new Date(),                                           // 1. Timestamp
-        data.user?.firstName || data.firstName || 'Unknown', // 2. First Name
-        data.user?.email || data.email || 'No Email',        // 3. Email
-        data.user?.industry || data.industry || 'Unknown',   // 4. Industry
-        data.user?.jobTitle || data.jobTitle || 'Unknown',   // 5. Job Title
-        data.freeResponses?.strategy_open || '',              // 6. Strategy Open
-        data.freeResponses?.ops_open || '',                   // 7. Operations Open
-        data.freeResponses?.tech_open || '',                  // 8. Technology Open
-        data.freeResponses?.data_open || '',                  // 9. Data Open
-        data.freeResponses?.culture_open || '',               // 10. Culture Open
-        data.freeResponses?.auto_open || '',                  // 11. Automation Open
-        data.overallScore || 0                                // 12. Overall Score
-      ]);
+      // Note: Assessment results now come via GET request, not POST
+      console.log('POST assessment_results received (should be GET now)');
+      console.log('Data:', data);
       
     } else if (data.type === 'test_entry') {
       // Handle test entries when event object is undefined
@@ -127,9 +99,49 @@ function doGet(e) {
     
     if (params.type === 'assessment_results') {
       const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-      const textSheet = spreadsheet.getSheetByName('Text Responses') || spreadsheet.insertSheet('Text Responses');
+      
+      // Create comprehensive results sheet
+      const resultsSheet = spreadsheet.getSheetByName('Complete Assessment Results') || spreadsheet.insertSheet('Complete Assessment Results');
       
       // Add headers if this is the first entry
+      if (resultsSheet.getLastRow() === 0) {
+        resultsSheet.getRange(1, 1, 1, 20).setValues([[
+          'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 
+          'Strategy Score', 'Operations Score', 'Technology Score', 'Data Score', 'Culture Score', 'Automation Score', 'Overall Score',
+          'Strategy Open Response', 'Operations Open Response', 'Technology Open Response', 'Data Open Response', 'Culture Open Response', 'Automation Open Response',
+          'Readiness Level', 'Source'
+        ]]);
+      }
+      
+      console.log('Adding complete assessment data from GET parameters');
+      
+      // Add the comprehensive data
+      resultsSheet.appendRow([
+        new Date(),
+        params.firstName || 'Unknown',
+        params.email || 'No Email',
+        params.industry || 'Unknown',
+        params.jobTitle || 'Unknown',
+        parseInt(params.strategyScore) || 0,
+        parseInt(params.operationsScore) || 0,
+        parseInt(params.technologyScore) || 0,
+        parseInt(params.dataScore) || 0,
+        parseInt(params.cultureScore) || 0,
+        parseInt(params.automationScore) || 0,
+        parseInt(params.overallScore) || 0,
+        params.strategyOpen || '',
+        params.opsOpen || '',
+        params.techOpen || '',
+        params.dataOpen || '',
+        params.cultureOpen || '',
+        params.autoOpen || '',
+        params.readinessLevel || '',
+        'Web Assessment'
+      ]);
+      
+      // Also maintain the legacy text responses sheet for backward compatibility
+      const textSheet = spreadsheet.getSheetByName('Text Responses') || spreadsheet.insertSheet('Text Responses');
+      
       if (textSheet.getLastRow() === 0) {
         textSheet.getRange(1, 1, 1, 12).setValues([[
           'Timestamp', 'First Name', 'Email', 'Industry', 'Job Title', 'Strategy Open', 'Operations Open', 
@@ -137,9 +149,6 @@ function doGet(e) {
         ]]);
       }
       
-      console.log('Adding text response data from GET parameters');
-      
-      // Add the data from URL parameters
       textSheet.appendRow([
         new Date(),
         params.firstName || 'Unknown',
@@ -156,7 +165,7 @@ function doGet(e) {
       ]);
       
       return ContentService
-        .createTextOutput(JSON.stringify({success: true, message: 'Text responses saved via GET'}))
+        .createTextOutput(JSON.stringify({success: true, message: 'Complete assessment data saved'}))
         .setMimeType(ContentService.MimeType.JSON);
     }
     
