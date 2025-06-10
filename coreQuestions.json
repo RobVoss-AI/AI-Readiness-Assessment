@@ -274,6 +274,23 @@
             "Budget limitations for technology upgrades",
             "Unclear technology roadmap and priorities"
           ]
+        },
+        {
+          "id": "tech_hardware_age",
+          "type": "likert",
+          "weight": 1.2,
+          "required": true,
+          "roles": ["all"],
+          "industries": ["all"],
+          "question": "Most of our computing hardware and technology equipment was purchased within the past 4 years",
+          "options": [
+            "Strongly Disagree",
+            "Disagree",
+            "Neutral",
+            "Agree",
+            "Strongly Agree"
+          ],
+          "helpText": "Modern hardware is essential for running AI applications efficiently and securely"
         }
       ]
     },
