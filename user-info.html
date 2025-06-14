@@ -720,7 +720,11 @@
         }
         
         async function sendUserToGoogleSheets(userData) {
-            const BACKEND_API_URL = "http://localhost:3001/api/users";
+            // Environment-aware API configuration
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:3001/api'
+                : 'https://api.vossaiconsulting.com/api';
+            const BACKEND_API_URL = `${API_BASE}/users`;
             
             try {
                 const response = await fetch(BACKEND_API_URL, {
