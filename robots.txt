@@ -1,0 +1,21 @@
+# Robots.txt for AI Opportunity Scorecard
+# Allow OpenAI crawlers for ChatGPT search and AI training
+
+# Allow OAI-SearchBot for ChatGPT search results
+User-agent: OAI-SearchBot
+Allow: /
+
+# Allow ChatGPT-User for user interactions in ChatGPT
+User-agent: ChatGPT-User
+Allow: /
+
+# Allow GPTBot for AI training (educational content)
+User-agent: GPTBot
+Allow: /
+
+# Allow all other crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://vossaiconsulting.com/sitemap.xml

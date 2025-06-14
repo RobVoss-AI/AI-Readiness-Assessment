@@ -706,8 +706,6 @@
         
         // Send data to collection services
         async function sendToDataCollection(userData) {
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
-            
             console.log('📝 Sending user data to data collection...');
             console.log('User data:', userData);
             
@@ -722,10 +720,10 @@
         }
         
         async function sendUserToGoogleSheets(userData) {
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
+            const BACKEND_API_URL = "http://localhost:3001/api/users";
             
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                const response = await fetch(BACKEND_API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -737,10 +735,15 @@
                     })
                 });
                 
-                console.log('✅ User data sent to Google Sheets successfully');
-                return true;
+                if (response.ok) {
+                    console.log('✅ User data sent to backend API successfully');
+                    return true;
+                } else {
+                    console.error('❌ Backend API returned error status:', response.status);
+                    return false;
+                }
             } catch (error) {
-                console.error('❌ Error sending user data to Google Sheets:', error);
+                console.error('❌ Error sending user data to backend API:', error);
                 return false;
             }
         }

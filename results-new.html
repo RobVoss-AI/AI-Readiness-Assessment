@@ -502,11 +502,11 @@
             return results.some(result => result.status === 'fulfilled' && result.value === true);
         }
         
-        // Method 1: Webhook service (most reliable)
+        // Method 1: Backend API (most reliable)
         async function sendToWebhook(data) {
             try {
-                // Using a simple webhook service for data collection
-                const response = await fetch('https://webhook.site/1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d', {
+                // Using the local backend API for data collection
+                const response = await fetch('http://localhost:3001/api/results', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -514,48 +514,41 @@
                     body: JSON.stringify(data)
                 });
                 
-                console.log('✅ Data sent to webhook successfully');
-                return true;
+                if (response.ok) {
+                    console.log('✅ Data sent to backend API successfully');
+                    return true;
+                } else {
+                    console.error('❌ Backend API returned error status:', response.status);
+                    return false;
+                }
             } catch (error) {
-                console.error('❌ Webhook failed:', error);
+                console.error('❌ Backend API failed:', error);
                 return false;
             }
         }
         
-        // Method 2: Google Sheets (backup)
+        // Method 2: Backend API (backup - same as primary)
         async function sendToGoogleSheets(data) {
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZYakwCdrFPZSy7_m_UVs-Bu_cc4uFUX6lm1BIrMhSB5z4W8IpQmuQk2SvwKDaNFnU/exec";
+            const BACKEND_API_URL = "http://localhost:3001/api/results";
             
             try {
-                // Create a flattened version for URL parameters
-                const params = new URLSearchParams({
-                    type: 'assessment_results',
-                    firstName: data.user.firstName || '',
-                    email: data.user.email || '',
-                    industry: data.user.industry || '',
-                    jobTitle: data.user.jobTitle || '',
-                    strategyScore: data.scores.strategy || 0,
-                    operationsScore: data.scores.operations || 0,
-                    technologyScore: data.scores.technology || 0,
-                    dataScore: data.scores.data || 0,
-                    cultureScore: data.scores.culture || 0,
-                    automationScore: data.scores.automation || 0,
-                    overallScore: data.scores.overall || 0,
-                    strategyOpen: data.freeResponses.strategy_open || '',
-                    opsOpen: data.freeResponses.ops_open || '',
-                    techOpen: data.freeResponses.tech_open || '',
-                    dataOpen: data.freeResponses.data_open || '',
-                    cultureOpen: data.freeResponses.culture_open || '',
-                    autoOpen: data.freeResponses.auto_open || '',
-                    readinessLevel: data.readinessLevel || '',
-                    timestamp: data.timestamp
+                const response = await fetch(BACKEND_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 });
                 
-                const response = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
-                console.log('✅ Data sent to Google Sheets successfully');
-                return true;
+                if (response.ok) {
+                    console.log('✅ Data sent to backend API (backup method) successfully');
+                    return true;
+                } else {
+                    console.error('❌ Backend API (backup method) returned error status:', response.status);
+                    return false;
+                }
             } catch (error) {
-                console.error('❌ Google Sheets failed:', error);
+                console.error('❌ Backend API (backup method) failed:', error);
                 return false;
             }
         }
