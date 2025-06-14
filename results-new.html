@@ -511,6 +511,8 @@
                     ? 'http://localhost:3001/api'
                     : 'https://api.vossaiconsulting.com/api';
                 
+                console.log('API Base URL:', API_BASE);
+                
                 const response = await fetch(`${API_BASE}/results`, {
                     method: 'POST',
                     headers: {
@@ -539,6 +541,8 @@
                 ? 'http://localhost:3001/api'
                 : 'https://api.vossaiconsulting.com/api';
             const BACKEND_API_URL = `${API_BASE}/results`;
+            
+            console.log('API Base URL:', API_BASE);
             
             try {
                 const response = await fetch(BACKEND_API_URL, {

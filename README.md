@@ -103,16 +103,19 @@ The application uses Supabase PostgreSQL with the following main tables:
 
 ## 🚀 Production Deployment
 
-### Environment Setup
-1. Set `NODE_ENV=production`
-2. Configure production domain in `FRONTEND_URL`
-3. Use secure session secrets
-4. Enable rate limiting and security features
+### Architecture
+- **Frontend**: Netlify hosting at `assessment.vossaiconsulting.com`
+- **Backend**: Cloud provider with Docker at `api.vossaiconsulting.com`
+- **Database**: Supabase (managed PostgreSQL)
+- **Cache**: Redis (containerized with backend)
 
-### Hosting Options
-- Deploy Docker containers to cloud provider
-- Use static hosting for frontend files
-- Configure API subdomain (api.yourdomain.com)
+### Quick Production Setup
+1. **Frontend**: Deploy to existing Netlify site
+2. **Backend**: Deploy Docker container to cloud provider
+3. **DNS**: Point `api.vossaiconsulting.com` to backend
+4. **Configure**: Set `FRONTEND_URL=https://assessment.vossaiconsulting.com`
+
+See `DEPLOY.md` for detailed deployment instructions.
 
 For support: robvoss@vossaiconsulting.com
 

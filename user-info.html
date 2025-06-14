@@ -726,6 +726,9 @@
                 : 'https://api.vossaiconsulting.com/api';
             const BACKEND_API_URL = `${API_BASE}/users`;
             
+            console.log('API Base URL:', API_BASE);
+            console.log('Backend API URL:', BACKEND_API_URL);
+            
             try {
                 const response = await fetch(BACKEND_API_URL, {
                     method: 'POST',
