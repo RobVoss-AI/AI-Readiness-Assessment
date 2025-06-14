@@ -1,0 +1,59 @@
+name: ai-opportunity-scorecard
+region: nyc
+services:
+- name: api
+  source_dir: /
+  github:
+    repo: RobVoss-AI/AI-Readiness-Assessment
+    branch: main
+    deploy_on_push: true
+  dockerfile_path: Dockerfile
+  http_port: 3001
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  health_check:
+    http_path: /health
+    initial_delay_seconds: 30
+    period_seconds: 10
+    timeout_seconds: 5
+    success_threshold: 1
+    failure_threshold: 3
+  routes:
+  - path: /
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: "3001"
+  - key: FRONTEND_URL
+    value: https://assessment.vossaiconsulting.com
+  - key: PRIMARY_DOMAIN
+    value: vossaiconsulting.com
+  - key: ASSESSMENT_SUBDOMAIN
+    value: assessment.vossaiconsulting.com
+  - key: CONTACT_EMAIL
+    value: robvoss@vossaiconsulting.com
+  - key: CONTACT_PHONE
+    value: 660-215-1313
+  - key: COMPANY_NAME
+    value: Voss AI Consulting
+  - key: HUBSPOT_DEAL_THRESHOLD
+    value: "70"
+  # These will be added manually in the console:
+  # - SUPABASE_URL
+  # - SUPABASE_SERVICE_ROLE_KEY
+  # - HUBSPOT_ACCESS_TOKEN
+  # - SESSION_SECRET
+  # - REDIS_HOST (from database component)
+  # - REDIS_PORT (from database component)
+  # - REDIS_PASSWORD (from database component)
+
+databases:
+- name: redis-cache
+  engine: REDIS
+  size: basic
+  num_nodes: 1
+
+domains:
+- domain: api.vossaiconsulting.com
+  type: PRIMARY
