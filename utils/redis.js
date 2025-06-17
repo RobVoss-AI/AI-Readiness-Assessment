@@ -8,15 +8,36 @@ class RedisClient {
 
     async connect() {
         try {
-            const redisConfig = process.env.REDIS_URL 
-                ? { url: process.env.REDIS_URL }
-                : {
+            // Debug logging to see what Redis variables are available
+            console.log('🔍 Redis Environment Variables:');
+            console.log('REDIS_URL:', process.env.REDIS_URL ? 'SET' : 'NOT SET');
+            console.log('REDIS_HOST:', process.env.REDIS_HOST || 'NOT SET');
+            console.log('REDIS_PORT:', process.env.REDIS_PORT || 'NOT SET');
+            console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD ? 'SET' : 'NOT SET');
+
+            let redisConfig;
+            
+            if (process.env.REDIS_URL) {
+                console.log('📡 Using REDIS_URL connection');
+                redisConfig = { url: process.env.REDIS_URL };
+            } else if (process.env.REDIS_HOST) {
+                console.log('📡 Using REDIS_HOST connection');
+                redisConfig = {
                     socket: {
-                        host: process.env.REDIS_HOST || 'localhost',
-                        port: process.env.REDIS_PORT || 6379,
+                        host: process.env.REDIS_HOST,
+                        port: parseInt(process.env.REDIS_PORT) || 6379,
                     },
                     password: process.env.REDIS_PASSWORD || undefined,
                 };
+            } else {
+                console.log('⚠️  No Redis environment variables found, using localhost fallback');
+                redisConfig = {
+                    socket: {
+                        host: 'localhost',
+                        port: 6379,
+                    }
+                };
+            }
 
             this.client = redis.createClient({
                 ...redisConfig,
