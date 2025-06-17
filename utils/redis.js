@@ -8,12 +8,18 @@ class RedisClient {
 
     async connect() {
         try {
+            const redisConfig = process.env.REDIS_URL 
+                ? { url: process.env.REDIS_URL }
+                : {
+                    socket: {
+                        host: process.env.REDIS_HOST || 'localhost',
+                        port: process.env.REDIS_PORT || 6379,
+                    },
+                    password: process.env.REDIS_PASSWORD || undefined,
+                };
+
             this.client = redis.createClient({
-                socket: {
-                    host: process.env.REDIS_HOST || 'localhost',
-                    port: process.env.REDIS_PORT || 6379,
-                },
-                password: process.env.REDIS_PASSWORD || undefined,
+                ...redisConfig,
                 retryDelayOnFailover: 100,
                 enableOfflineQueue: false
             });
