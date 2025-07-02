@@ -17,8 +17,12 @@ const PORT = process.env.PORT || 3001;
 // Initialize connections
 async function initializeConnections() {
     console.log('🔄 Connecting to Redis...');
-    await redisClient.connect();
-    console.log('✅ Redis connected successfully');
+    try {
+        await redisClient.connect();
+        console.log('✅ Redis connected successfully');
+    } catch (error) {
+        console.log('⚠️  Redis connection failed, continuing without Redis');
+    }
     
     console.log('🔄 Initializing Supabase...');
     supabaseClient.initialize();
@@ -308,17 +312,20 @@ function setupRoutes(gptLimiter) {
                         console.log('🎯 Created new HubSpot contact');
                     }
                     
-                    // Create deal for high-scoring assessments
-                    if (hubspotContact && score >= 70) {
+                    // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
+                    if (hubspotContact) {
+                        const dealStage = score >= 70 ? 'qualified' : 'unqualified';
                         hubspotDeal = await hubspotClient.createDealFromAssessment(
                             hubspotContact.id, 
                             assessmentData, 
                             score, 
-                            userInfo
+                            userInfo,
+                            dealStage
                         );
                         
                         if (hubspotDeal) {
-                            console.log('💰 Created HubSpot deal for high-scoring assessment');
+                            const dealType = score >= 70 ? 'qualified' : 'unqualified';
+                            console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
                         }
                     }
                     
@@ -522,22 +529,27 @@ function setupRoutes(gptLimiter) {
                 email,
                 industry,
                 job_title: jobTitle,
-                role,
-                org_size: orgSize,
-                consent_marketing: consentMarketing,
-                session_id: sessionId,
+                company: req.body.company || '',
+                company_size: orgSize,
+                phone: req.body.phone || '',
                 created_at: new Date().toISOString()
             };
             
-            // Save to Redis for session
-            await redisClient.setJSON(`user:${sessionId}`, userData, 86400);
+            // Save to Redis for session (including extra fields for session)
+            const sessionData = {
+                ...userData,
+                role,
+                consent_marketing: consentMarketing,
+                session_id: sessionId
+            };
+            await redisClient.setJSON(`user:${sessionId}`, sessionData, 86400);
             
             // Save to Supabase for persistence
             if (supabaseClient.isConnected) {
                 try {
                     await supabaseClient.client
                         .from('users')
-                        .upsert(userData, { onConflict: 'session_id' });
+                        .upsert(userData, { onConflict: 'email' });
                 } catch (supabaseError) {
                     console.warn('Supabase user save failed:', supabaseError.message);
                 }
@@ -589,12 +601,53 @@ function setupRoutes(gptLimiter) {
             await redisClient.setJSON(`completed:${sessionId}`, completedData, 86400);
             
             let assessmentId = null;
+            let userId = null;
+            
+            // Create or get user first
+            if (supabaseClient.isConnected && userInfo?.email) {
+                try {
+                    // Check if user exists
+                    const { data: existingUsers } = await supabaseClient.client
+                        .from('users')
+                        .select('id')
+                        .eq('email', userInfo.email);
+                    
+                    if (existingUsers && existingUsers.length > 0) {
+                        userId = existingUsers[0].id;
+                        console.log('📋 Found existing user:', userId);
+                    } else {
+                        // Create new user
+                        const newUserData = {
+                            email: userInfo.email,
+                            first_name: userInfo.firstName || '',
+                            last_name: userInfo.lastName || '',
+                            company: userInfo.company || '',
+                            job_title: userInfo.jobTitle || '',
+                            industry: userInfo.industry || '',
+                            company_size: userInfo.companySize || '',
+                            created_at: new Date().toISOString()
+                        };
+                        
+                        const { data: newUser } = await supabaseClient.client
+                            .from('users')
+                            .insert(newUserData)
+                            .select('id')
+                            .single();
+                        
+                        userId = newUser?.id;
+                        console.log('👤 Created new user:', userId);
+                    }
+                } catch (userError) {
+                    console.warn('User creation/lookup failed:', userError.message);
+                }
+            }
             
             // Save to Supabase for permanent storage
             if (supabaseClient.isConnected) {
                 try {
                     const supabaseData = {
                         session_id: sessionId,
+                        user_id: userId,
                         answers: assessmentData,
                         score: score,
                         section_scores: sectionScores,
@@ -641,17 +694,20 @@ function setupRoutes(gptLimiter) {
                         console.log('🎯 Created new HubSpot contact');
                     }
                     
-                    // Create deal for high-scoring assessments
-                    if (hubspotContact && score >= 70) {
+                    // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
+                    if (hubspotContact) {
+                        const dealStage = score >= 70 ? 'qualified' : 'unqualified';
                         hubspotDeal = await hubspotClient.createDealFromAssessment(
                             hubspotContact.id, 
                             assessmentData, 
                             score, 
-                            userInfo
+                            userInfo,
+                            dealStage
                         );
                         
                         if (hubspotDeal) {
-                            console.log('💰 Created HubSpot deal for high-scoring assessment');
+                            const dealType = score >= 70 ? 'qualified' : 'unqualified';
+                            console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
                         }
                     }
                     

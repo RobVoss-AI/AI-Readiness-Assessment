@@ -67,27 +67,27 @@ class HubSpotClient {
         }
     }
 
-    // Create deal for high-scoring assessments
-    async createDealFromAssessment(contactId, assessmentData, score, userInfo) {
+    // Create deal for all assessments (qualified and unqualified)
+    async createDealFromAssessment(contactId, assessmentData, score, userInfo, dealStage = 'qualified') {
         if (!this.client) return null;
 
         try {
-            // Only create deals for scores above threshold
-            const dealThreshold = parseFloat(process.env.HUBSPOT_DEAL_THRESHOLD || '70');
-            if (score < dealThreshold) {
-                console.log(`Score ${score} below deal threshold ${dealThreshold}, skipping deal creation`);
-                return null;
-            }
+            // Create deals for all assessments now (not just high scores)
+            const isQualified = dealStage === 'qualified';
+            const dealStageName = isQualified 
+                ? (process.env.HUBSPOT_QUALIFIED_STAGE || 'appointmentscheduled')
+                : (process.env.HUBSPOT_UNQUALIFIED_STAGE || 'unqualified');
 
             const dealProperties = {
-                dealname: `AI Consulting - ${userInfo.company || userInfo.email}`,
+                dealname: `AI Assessment - ${userInfo.company || userInfo.email} (${isQualified ? 'Qualified' : 'Unqualified'})`,
                 pipeline: process.env.HUBSPOT_PIPELINE_ID || 'default',
-                dealstage: process.env.HUBSPOT_INITIAL_STAGE || 'appointmentscheduled',
-                amount: this.calculateDealValue(score, userInfo.companySize),
+                dealstage: dealStageName,
+                amount: isQualified ? this.calculateDealValue(score, userInfo.companySize) : '0',
                 closedate: this.calculateCloseDate(),
                 ai_readiness_score: score.toString(),
                 lead_source: 'AI Readiness Assessment',
-                deal_type: 'AI Consulting Services'
+                deal_type: isQualified ? 'AI Consulting Services' : 'Assessment Only',
+                qualification_status: isQualified ? 'Qualified' : 'Unqualified'
             };
 
             const dealResponse = await this.client.crm.deals.basicApi.create({
