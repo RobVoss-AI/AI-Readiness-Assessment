@@ -15,6 +15,12 @@ class RedisClient {
             console.log('REDIS_PORT:', process.env.REDIS_PORT || 'NOT SET');
             console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD ? 'SET' : 'NOT SET');
 
+            // Skip Redis connection if no environment variables are set
+            if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+                console.log('⚠️  No Redis environment variables found, skipping Redis connection');
+                throw new Error('Redis configuration not found');
+            }
+
             let redisConfig;
             
             if (process.env.REDIS_URL) {
@@ -26,27 +32,22 @@ class RedisClient {
                     socket: {
                         host: process.env.REDIS_HOST,
                         port: parseInt(process.env.REDIS_PORT) || 6379,
+                        connectTimeout: 5000, // 5 second timeout
+                        commandTimeout: 3000  // 3 second command timeout
                     },
                     password: process.env.REDIS_PASSWORD || undefined,
-                };
-            } else {
-                console.log('⚠️  No Redis environment variables found, using localhost fallback');
-                redisConfig = {
-                    socket: {
-                        host: 'localhost',
-                        port: 6379,
-                    }
                 };
             }
 
             this.client = redis.createClient({
                 ...redisConfig,
                 retryDelayOnFailover: 100,
-                enableOfflineQueue: false
+                enableOfflineQueue: false,
+                lazyConnect: true // Don't connect immediately
             });
 
             this.client.on('error', (err) => {
-                console.error('Redis Client Error:', err);
+                console.error('Redis Client Error:', err.message);
                 this.isConnected = false;
             });
 
@@ -60,10 +61,16 @@ class RedisClient {
                 this.isConnected = false;
             });
 
-            await this.client.connect();
+            // Add connection timeout wrapper
+            const connectPromise = this.client.connect();
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Redis connection timeout after 10 seconds')), 10000);
+            });
+
+            await Promise.race([connectPromise, timeoutPromise]);
             return this.client;
         } catch (error) {
-            console.error('Failed to connect to Redis:', error);
+            console.error('Failed to connect to Redis:', error.message);
             this.isConnected = false;
             return null;
         }

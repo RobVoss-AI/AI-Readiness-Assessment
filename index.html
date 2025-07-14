@@ -175,6 +175,14 @@
             from { opacity: 0; transform: translateX(-30px); }
             to { opacity: 1; transform: translateX(0); }
         }
+        
+        /* Ensure sections stack vertically */
+        main section {
+            display: block;
+            width: 100%;
+            clear: both;
+            position: relative;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -184,18 +192,14 @@
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-16 md:h-20">
                 <!-- Logo -->
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="flex items-center">
-                            <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="display: none;">
-                                <span class="text-white font-bold text-lg">V</span>
-                            </div>
-                            <div class="ml-3 hidden sm:block">
-                                <div class="text-xl font-bold text-gray-900">VossAIConsulting</div>
-                                <div class="text-xs text-gray-500 -mt-1">Strategic AI Implementation</div>
-                            </div>
-                        </div>
+                <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
+                    <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-10 h-10 rounded-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="display: none;">
+                        <span class="text-white font-bold text-lg">V</span>
+                    </div>
+                    <div class="ml-3 hidden sm:block">
+                        <div class="text-xl font-bold text-gray-900">VossAIConsulting</div>
+                        <div class="text-xs text-gray-500 -mt-1">Strategic AI Implementation</div>
                     </div>
                 </div>
 
@@ -224,7 +228,7 @@
         <div class="mobile-menu fixed inset-y-0 left-0 z-50 w-full bg-white shadow-xl md:hidden" id="mobile-menu">
             <div class="flex flex-col h-full">
                 <div class="flex items-center justify-between p-4 border-b">
-                    <div class="flex items-center">
+                    <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                         <img src="images/your-logo.png" alt="VossAIConsulting Logo" class="w-8 h-8 rounded-lg" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center" style="display: none;">
                             <span class="text-white font-bold">V</span>
@@ -287,24 +291,24 @@
                         
                         <!-- Trust Indicators -->
                         <div class="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500">
-                            <div class="flex items-center">
+                            <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                                 <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                 </svg>
                                 Free to start
-                            </div>
-                            <div class="flex items-center">
+                            </a>
+                            <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                                 <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                 </svg>
                                 5-minute assessment
-                            </div>
-                            <div class="flex items-center">
+                            </a>
+                            <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                                 <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                 </svg>
                                 Industry-specific insights
-                            </div>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -501,7 +505,7 @@
                 
                 <!-- Mobile-optimized pricing cards -->
                 <div class="max-w-5xl mx-auto">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Free Tier -->
                         <div class="card p-8 relative">
                             <div class="text-center mb-8">
@@ -698,24 +702,24 @@
                     
                     <!-- Trust signals -->
                     <div class="flex flex-wrap justify-center items-center gap-6 text-sm text-blue-100">
-                        <div class="flex items-center">
+                        <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                             <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                             University AI Expert
-                        </div>
-                        <div class="flex items-center">
+                        </a>
+                        <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                             <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                             Research-Based Framework
-                        </div>
-                        <div class="flex items-center">
+                        </a>
+                        <a href="https://vossaiconsulting.com" class="flex items-center hover:opacity-80 transition-opacity">
                             <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                             Industry-Specific Insights
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>

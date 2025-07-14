@@ -1,4 +1,6 @@
 // server.js - Main backend server
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -9,7 +11,6 @@ const RateLimitRedisStore = require('rate-limit-redis').default;
 const redisClient = require('./utils/redis');
 const supabaseClient = require('./utils/supabase');
 const hubspotClient = require('./utils/hubspot');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,9 +20,13 @@ async function initializeConnections() {
     console.log('🔄 Connecting to Redis...');
     try {
         await redisClient.connect();
-        console.log('✅ Redis connected successfully');
+        if (redisClient.isConnected) {
+            console.log('✅ Redis connected successfully');
+        } else {
+            console.log('⚠️  Redis connection failed, continuing without Redis');
+        }
     } catch (error) {
-        console.log('⚠️  Redis connection failed, continuing without Redis');
+        console.log('⚠️  Redis connection failed, continuing without Redis:', error.message);
     }
     
     console.log('🔄 Initializing Supabase...');
@@ -42,11 +47,10 @@ async function setupMiddleware() {
         credentials: true
     }));
     app.use(express.json({ limit: '10mb' }));
-    app.use(express.static('public'));
+    app.use(express.static('.'));
 
-    // Session management with Redis
-    app.use(session({
-        store: new ConnectRedisStore({ client: redisClient.client }),
+    // Session management with Redis (fallback to memory store)
+    const sessionConfig = {
         secret: process.env.SESSION_SECRET || 'ai-scorecard-secret-key',
         resave: false,
         saveUninitialized: false,
@@ -55,30 +59,52 @@ async function setupMiddleware() {
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }
-    }));
+    };
 
-    // Redis-based rate limiting
-    const limiter = rateLimit({
-        store: new RateLimitRedisStore({
-            sendCommand: (...args) => redisClient.client.sendCommand(args),
-        }),
+    if (redisClient.isConnected && redisClient.client) {
+        sessionConfig.store = new ConnectRedisStore({ client: redisClient.client });
+        console.log('📝 Using Redis for session storage');
+    } else {
+        console.log('📝 Using memory store for sessions (Redis unavailable)');
+    }
+
+    app.use(session(sessionConfig));
+
+    // Rate limiting with Redis fallback
+    const limiterConfig = {
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 100, // limit each IP to 100 requests per windowMs
         standardHeaders: true,
         legacyHeaders: false,
-    });
+    };
+
+    if (redisClient.isConnected && redisClient.client) {
+        limiterConfig.store = new RateLimitRedisStore({
+            sendCommand: (...args) => redisClient.client.sendCommand(args),
+        });
+        console.log('🚦 Using Redis for rate limiting');
+    } else {
+        console.log('🚦 Using memory store for rate limiting (Redis unavailable)');
+    }
+
+    const limiter = rateLimit(limiterConfig);
     app.use('/api/', limiter);
 
     // Stricter rate limit for GPT endpoints
-    const gptLimiter = rateLimit({
-        store: new RateLimitRedisStore({
-            sendCommand: (...args) => redisClient.client.sendCommand(args),
-        }),
+    const gptLimiterConfig = {
         windowMs: 60 * 60 * 1000, // 1 hour
         max: 10, // limit each IP to 10 GPT requests per hour
         standardHeaders: true,
         legacyHeaders: false,
-    });
+    };
+
+    if (redisClient.isConnected && redisClient.client) {
+        gptLimiterConfig.store = new RateLimitRedisStore({
+            sendCommand: (...args) => redisClient.client.sendCommand(args),
+        });
+    }
+
+    const gptLimiter = rateLimit(gptLimiterConfig);
 
     return gptLimiter;
 }
@@ -136,8 +162,8 @@ async function startServer() {
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`📊 Assessment API: http://localhost:${PORT}/api/assessment`);
-            console.log(`📝 Session management: Redis-backed`);
-            console.log(`⚡ Caching: Redis-enabled`);
+            console.log(`📝 Session management: ${redisClient.isConnected ? 'Redis-backed' : 'Memory-based'}`);
+            console.log(`⚡ Caching: ${redisClient.isConnected ? 'Redis-enabled' : 'Memory-based'}`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
