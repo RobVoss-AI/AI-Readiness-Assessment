@@ -30,7 +30,7 @@ async function initializeConnections() {
     }
     
     console.log('🔄 Initializing Supabase...');
-    supabaseClient.initialize();
+    await supabaseClient.initialize();
     
     console.log('🔄 Initializing HubSpot...');
     hubspotClient.initialize();
