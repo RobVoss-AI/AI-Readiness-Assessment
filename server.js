@@ -47,7 +47,7 @@ async function setupMiddleware() {
         credentials: true
     }));
     app.use(express.json({ limit: '10mb' }));
-    app.use(express.static('.'));
+    app.use(express.static('client'));
 
     // Session management with Redis (fallback to memory store)
     const sessionConfig = {
@@ -459,11 +459,11 @@ function setupRoutes(gptLimiter) {
             if (!benchmarks) {
                 const fs = require('fs');
                 const path = require('path');
-                const benchmarksPath = path.join(__dirname, 'benchmarks.js');
+                const benchmarksPath = path.join(__dirname, 'client/benchmarks.js');
                 
                 if (fs.existsSync(benchmarksPath)) {
-                    delete require.cache[require.resolve('./benchmarks.js')];
-                    const benchmarksModule = require('./benchmarks.js');
+                    delete require.cache[require.resolve('./client/benchmarks.js')];
+                    const benchmarksModule = require('./client/benchmarks.js');
                     benchmarks = typeof benchmarksModule === 'function' ? benchmarksModule() : benchmarksModule;
                     
                     await redisClient.setJSON(cacheKey, benchmarks, 3600);
