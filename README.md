@@ -37,7 +37,7 @@ Edit `.env` file with your credentials:
 ```bash
 # Supabase Configuration
 SUPABASE_URL=your-supabase-project-url
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_API_KEY=your-supabase-service-role-key
 
 # HubSpot CRM Integration
 HUBSPOT_ACCESS_TOKEN=your-hubspot-access-token

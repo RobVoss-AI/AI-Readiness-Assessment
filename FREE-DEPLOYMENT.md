@@ -102,7 +102,7 @@ FRONTEND_URL=https://assessment.vossaiconsulting.com
 
 # Supabase (you have these)
 SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-key
+SUPABASE_API_KEY=your-key
 
 # HubSpot (you have this)
 HUBSPOT_ACCESS_TOKEN=your-token

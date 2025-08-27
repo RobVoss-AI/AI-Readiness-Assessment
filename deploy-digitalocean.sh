@@ -22,7 +22,7 @@ if [ ! -f ".env" ]; then
     echo ""
     echo "Required environment variables for DigitalOcean:"
     echo "- SUPABASE_URL"
-    echo "- SUPABASE_SERVICE_ROLE_KEY" 
+    echo "- SUPABASE_API_KEY" 
     echo "- HUBSPOT_ACCESS_TOKEN"
     echo "- SESSION_SECRET (change the default!)"
     echo ""
@@ -33,7 +33,7 @@ fi
 # Verify essential environment variables
 echo "🔍 Checking environment configuration..."
 
-required_vars=("SUPABASE_URL" "SUPABASE_SERVICE_ROLE_KEY" "HUBSPOT_ACCESS_TOKEN")
+required_vars=("SUPABASE_URL" "SUPABASE_API_KEY" "HUBSPOT_ACCESS_TOKEN")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -111,7 +111,7 @@ echo ""
 echo "Environment Variables to add in DigitalOcean:"
 echo "--------------------------------------------"
 grep -v '^#' .env | grep -v '^$' | while IFS='=' read -r key value; do
-    if [[ "$key" =~ ^(NODE_ENV|PORT|FRONTEND_URL|SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|HUBSPOT_ACCESS_TOKEN|HUBSPOT_DEAL_THRESHOLD|SESSION_SECRET|CONTACT_EMAIL|CONTACT_PHONE|COMPANY_NAME|PRIMARY_DOMAIN|ASSESSMENT_SUBDOMAIN)$ ]]; then
+    if [[ "$key" =~ ^(NODE_ENV|PORT|FRONTEND_URL|SUPABASE_URL|SUPABASE_API_KEY|HUBSPOT_ACCESS_TOKEN|HUBSPOT_DEAL_THRESHOLD|SESSION_SECRET|CONTACT_EMAIL|CONTACT_PHONE|COMPANY_NAME|PRIMARY_DOMAIN|ASSESSMENT_SUBDOMAIN)$ ]]; then
         echo "$key=$value"
     fi
 done

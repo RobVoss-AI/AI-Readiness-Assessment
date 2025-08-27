@@ -54,7 +54,7 @@ REDIS_PASSWORD=${ai-scorecard-redis.PASSWORD}
 
 # Supabase
 SUPABASE_URL=https://qpfrifnwhcinzhapgjqf.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_API_KEY=your-supabase-service-role-key
 
 # HubSpot
 HUBSPOT_ACCESS_TOKEN=your-hubspot-access-token

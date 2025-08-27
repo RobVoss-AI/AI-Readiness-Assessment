@@ -30,7 +30,7 @@ fi
 
 echo "🔍 Checking required environment variables..."
 
-required_vars=("SUPABASE_URL" "SUPABASE_SERVICE_ROLE_KEY" "HUBSPOT_ACCESS_TOKEN")
+required_vars=("SUPABASE_URL" "SUPABASE_API_KEY" "HUBSPOT_ACCESS_TOKEN")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -92,7 +92,7 @@ echo ""
 
 # Show variables from .env (excluding sensitive defaults)
 grep -v '^#' .env | grep -v '^$' | while IFS='=' read -r key value; do
-    if [[ "$key" =~ ^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|HUBSPOT_ACCESS_TOKEN|HUBSPOT_DEAL_THRESHOLD|CONTACT_EMAIL|CONTACT_PHONE|COMPANY_NAME|PRIMARY_DOMAIN|ASSESSMENT_SUBDOMAIN)$ ]]; then
+    if [[ "$key" =~ ^(SUPABASE_URL|SUPABASE_API_KEY|HUBSPOT_ACCESS_TOKEN|HUBSPOT_DEAL_THRESHOLD|CONTACT_EMAIL|CONTACT_PHONE|COMPANY_NAME|PRIMARY_DOMAIN|ASSESSMENT_SUBDOMAIN)$ ]]; then
         echo "$key=$value"
     fi
 done
