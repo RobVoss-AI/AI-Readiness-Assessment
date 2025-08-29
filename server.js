@@ -28,13 +28,13 @@ async function initializeConnections() {
     } catch (error) {
         console.log('⚠️  Redis connection failed, continuing without Redis:', error.message);
     }
-    
+
     console.log('🔄 Initializing Supabase...');
     await supabaseClient.initialize();
-    
+
     console.log('🔄 Initializing HubSpot...');
     hubspotClient.initialize();
-    
+
     return { redisClient, supabaseClient };
 }
 
@@ -47,7 +47,15 @@ async function setupMiddleware() {
         credentials: true
     }));
     app.use(express.json({ limit: '10mb' }));
+
+    // content security policy directives
+    app.use(function (req, res, next) {
+        res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://script.google.com https://www.googletagmanager.com/gtag/; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com; frame-ancestors 'none';");
+        return next();
+    });
+
     app.use(express.static('client'));
+
 
     // Session management with Redis (fallback to memory store)
     const sessionConfig = {
@@ -112,7 +120,7 @@ async function setupMiddleware() {
 // Helper function to generate key insights for HubSpot notes
 function generateKeyInsights(sectionScores, overallScore) {
     const insights = [];
-    
+
     // Overall assessment
     if (overallScore >= 80) {
         insights.push('High AI readiness - excellent candidate for advanced AI implementation');
@@ -121,7 +129,7 @@ function generateKeyInsights(sectionScores, overallScore) {
     } else {
         insights.push('Early AI readiness stage - significant opportunity for consulting engagement');
     }
-    
+
     // Section-specific insights
     const sections = [
         { key: 'strategy', name: 'AI Strategy', threshold: 70 },
@@ -131,7 +139,7 @@ function generateKeyInsights(sectionScores, overallScore) {
         { key: 'culture', name: 'Culture', threshold: 70 },
         { key: 'governance', name: 'Governance', threshold: 65 }
     ];
-    
+
     sections.forEach(section => {
         const score = sectionScores?.[section.key];
         if (score !== undefined) {
@@ -142,7 +150,7 @@ function generateKeyInsights(sectionScores, overallScore) {
             }
         }
     });
-    
+
     return insights;
 }
 
@@ -151,13 +159,13 @@ async function startServer() {
     try {
         // Step 1: Initialize connections
         await initializeConnections();
-        
+
         // Step 2: Setup middleware after Redis is ready
         const gptLimiter = await setupMiddleware();
-        
+
         // Step 3: Setup routes (they can use Redis now)
         setupRoutes(gptLimiter);
-        
+
         // Step 4: Start the server
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
@@ -178,10 +186,10 @@ function setupRoutes(gptLimiter) {
         try {
             const { assessmentData, userInfo } = req.body;
             const sessionId = req.sessionID;
-            
+
             // Save to Redis for fast access (temporary cache)
             await redisClient.setJSON(`assessment:${sessionId}`, assessmentData, 3600);
-            
+
             // Also save/update in Supabase for persistence
             if (supabaseClient.isConnected) {
                 try {
@@ -191,7 +199,7 @@ function setupRoutes(gptLimiter) {
                         .select('id')
                         .eq('session_id', sessionId)
                         .single();
-                    
+
                     if (existingAssessment.data) {
                         // Update existing
                         await supabaseClient.updateAssessment(existingAssessment.data.id, {
@@ -213,7 +221,7 @@ function setupRoutes(gptLimiter) {
                     console.warn('Supabase save failed, continuing with Redis only:', supabaseError.message);
                 }
             }
-            
+
             res.json({ success: true, sessionId });
         } catch (error) {
             console.error('Assessment save error:', error);
@@ -224,10 +232,10 @@ function setupRoutes(gptLimiter) {
     app.get('/api/assessment/load/:sessionId?', async (req, res) => {
         try {
             const sessionId = req.params.sessionId || req.sessionID;
-            
+
             // Try Redis first (fastest)
             let assessmentData = await redisClient.getJSON(`assessment:${sessionId}`);
-            
+
             // If not in Redis, try Supabase
             if (!assessmentData && supabaseClient.isConnected) {
                 try {
@@ -236,7 +244,7 @@ function setupRoutes(gptLimiter) {
                         .select('answers, status')
                         .eq('session_id', sessionId)
                         .single();
-                    
+
                     if (supabaseData.data) {
                         assessmentData = supabaseData.data.answers;
                         // Re-cache in Redis for future requests
@@ -246,7 +254,7 @@ function setupRoutes(gptLimiter) {
                     console.warn('Supabase load failed:', supabaseError.message);
                 }
             }
-            
+
             res.json({ assessmentData: assessmentData || null });
         } catch (error) {
             console.error('Assessment load error:', error);
@@ -258,7 +266,7 @@ function setupRoutes(gptLimiter) {
         try {
             const { assessmentData, userInfo, score, sectionScores } = req.body;
             const sessionId = req.sessionID;
-            
+
             // Cache completed assessment in Redis
             const completedData = {
                 assessmentData,
@@ -268,9 +276,9 @@ function setupRoutes(gptLimiter) {
                 completedAt: new Date().toISOString()
             };
             await redisClient.setJSON(`completed:${sessionId}`, completedData, 86400);
-            
+
             let assessmentId = null;
-            
+
             // Save to Supabase for permanent storage
             if (supabaseClient.isConnected) {
                 try {
@@ -280,7 +288,7 @@ function setupRoutes(gptLimiter) {
                         .select('id')
                         .eq('session_id', sessionId)
                         .single();
-                    
+
                     const updateData = {
                         answers: assessmentData,
                         score: score,
@@ -291,7 +299,7 @@ function setupRoutes(gptLimiter) {
                         status: 'completed',
                         completed_at: new Date().toISOString()
                     };
-                    
+
                     if (existingAssessment.data) {
                         const updated = await supabaseClient.updateAssessment(existingAssessment.data.id, updateData);
                         assessmentId = existingAssessment.data.id;
@@ -306,21 +314,21 @@ function setupRoutes(gptLimiter) {
                     console.warn('Supabase completion save failed:', supabaseError.message);
                 }
             }
-            
+
             // Create HubSpot lead if email provided and HubSpot connected
             let hubspotContact = null;
             let hubspotDeal = null;
-            
+
             if (hubspotClient.isConnected && userInfo?.email) {
                 try {
                     // Check if contact already exists
                     const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
-                    
+
                     if (existingContact) {
                         // Update existing contact with new assessment data
                         hubspotContact = await hubspotClient.updateContactAssessment(
-                            userInfo.email, 
-                            assessmentId, 
+                            userInfo.email,
+                            assessmentId,
                             {
                                 ai_readiness_score: score.toString(),
                                 last_assessment_date: new Date().toISOString().split('T')[0]
@@ -330,31 +338,31 @@ function setupRoutes(gptLimiter) {
                     } else {
                         // Create new contact
                         hubspotContact = await hubspotClient.createContactFromAssessment(
-                            assessmentData, 
-                            userInfo, 
-                            score, 
+                            assessmentData,
+                            userInfo,
+                            score,
                             sectionScores
                         );
                         console.log('🎯 Created new HubSpot contact');
                     }
-                    
+
                     // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
                     if (hubspotContact) {
                         const dealStage = score >= 70 ? 'qualified' : 'unqualified';
                         hubspotDeal = await hubspotClient.createDealFromAssessment(
-                            hubspotContact.id, 
-                            assessmentData, 
-                            score, 
+                            hubspotContact.id,
+                            assessmentData,
+                            score,
                             userInfo,
                             dealStage
                         );
-                        
+
                         if (hubspotDeal) {
                             const dealType = score >= 70 ? 'qualified' : 'unqualified';
                             console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
                         }
                     }
-                    
+
                     // Add assessment insights as note with free responses
                     if (hubspotContact) {
                         const keyInsights = generateKeyInsights(sectionScores, score);
@@ -362,16 +370,16 @@ function setupRoutes(gptLimiter) {
                         const freeResponses = assessmentData?.freeResponses || {};
                         await hubspotClient.addAssessmentNote(hubspotContact.id, score, keyInsights, freeResponses);
                     }
-                    
+
                 } catch (hubspotError) {
                     console.warn('HubSpot integration failed:', hubspotError.message);
                 }
             }
-            
-            res.json({ 
-                success: true, 
-                sessionId, 
-                score, 
+
+            res.json({
+                success: true,
+                sessionId,
+                score,
                 sectionScores,
                 hubspot: {
                     contactCreated: !!hubspotContact,
@@ -389,21 +397,21 @@ function setupRoutes(gptLimiter) {
     app.get('/api/questions', async (req, res) => {
         try {
             const { industry, role } = req.query;
-            
+
             // Check Redis cache first
             const cacheKey = `questions:${industry || 'all'}:${role || 'all'}`;
             let questions = await redisClient.getJSON(cacheKey);
-            
+
             if (!questions && supabaseClient.isConnected) {
                 // Load from Supabase
                 questions = await supabaseClient.getQuestions({ industry, role });
-                
+
                 if (questions) {
                     // Cache for 30 minutes
                     await redisClient.setJSON(cacheKey, questions, 1800);
                 }
             }
-            
+
             // Fallback to JSON files
             if (!questions) {
                 const fs = require('fs');
@@ -416,7 +424,7 @@ function setupRoutes(gptLimiter) {
                     console.warn('Failed to load questions from file:', fileError.message);
                 }
             }
-            
+
             res.json({ questions: questions || [] });
         } catch (error) {
             console.error('Questions API error:', error);
@@ -428,23 +436,23 @@ function setupRoutes(gptLimiter) {
     app.get('/api/benchmarks', async (req, res) => {
         try {
             const { industry, companySize } = req.query;
-            
+
             // Check cache first
             const cacheKey = `benchmarks:${industry || 'all'}:${companySize || 'all'}`;
             let benchmarks = await redisClient.getJSON(cacheKey);
-            
+
             if (!benchmarks && supabaseClient.isConnected) {
                 // Load from Supabase
                 try {
                     let query = supabaseClient.client.from('benchmarks').select('*');
-                    
+
                     if (industry) {
                         query = query.eq('industry', industry);
                     }
                     if (companySize) {
                         query = query.eq('company_size', companySize);
                     }
-                    
+
                     const { data, error } = await query;
                     if (!error && data) {
                         benchmarks = data;
@@ -454,22 +462,22 @@ function setupRoutes(gptLimiter) {
                     console.warn('Supabase benchmarks load failed:', supabaseError.message);
                 }
             }
-            
+
             // Fallback to file
             if (!benchmarks) {
                 const fs = require('fs');
                 const path = require('path');
                 const benchmarksPath = path.join(__dirname, 'client/benchmarks.js');
-                
+
                 if (fs.existsSync(benchmarksPath)) {
                     delete require.cache[require.resolve('./client/benchmarks.js')];
                     const benchmarksModule = require('./client/benchmarks.js');
                     benchmarks = typeof benchmarksModule === 'function' ? benchmarksModule() : benchmarksModule;
-                    
+
                     await redisClient.setJSON(cacheKey, benchmarks, 3600);
                 }
             }
-            
+
             res.json({ benchmarks: benchmarks || [] });
         } catch (error) {
             console.error('Benchmarks API error:', error);
@@ -483,16 +491,16 @@ function setupRoutes(gptLimiter) {
             if (!supabaseClient.isConnected) {
                 return res.status(503).json({ error: 'Analytics unavailable - database not connected' });
             }
-            
+
             // Check cache first
             const cachedAnalytics = await redisClient.getJSON('analytics:overview');
             if (cachedAnalytics) {
                 return res.json(cachedAnalytics);
             }
-            
+
             // Get assessment statistics
             const stats = await supabaseClient.getAssessmentStats();
-            
+
             if (stats) {
                 const analytics = {
                     totalAssessments: stats.length,
@@ -502,19 +510,19 @@ function setupRoutes(gptLimiter) {
                     completionTrend: [],
                     lastUpdated: new Date().toISOString()
                 };
-                
+
                 // Process industry breakdown
                 stats.forEach(assessment => {
                     if (assessment.industry) {
-                        analytics.industryBreakdown[assessment.industry] = 
+                        analytics.industryBreakdown[assessment.industry] =
                             (analytics.industryBreakdown[assessment.industry] || 0) + 1;
                     }
                     if (assessment.company_size) {
-                        analytics.companySizeBreakdown[assessment.company_size] = 
+                        analytics.companySizeBreakdown[assessment.company_size] =
                             (analytics.companySizeBreakdown[assessment.company_size] || 0) + 1;
                     }
                 });
-                
+
                 // Cache for 15 minutes
                 await redisClient.setJSON('analytics:overview', analytics, 900);
                 res.json(analytics);
@@ -529,8 +537,8 @@ function setupRoutes(gptLimiter) {
 
     // Health check
     app.get('/health', (req, res) => {
-        res.json({ 
-            status: 'OK', 
+        res.json({
+            status: 'OK',
             timestamp: new Date().toISOString(),
             redis: redisClient.isConnected,
             supabase: supabaseClient.isConnected,
@@ -548,7 +556,7 @@ function setupRoutes(gptLimiter) {
         try {
             const { firstName, lastName, email, industry, jobTitle, role, orgSize, consentMarketing } = req.body;
             const sessionId = req.sessionID;
-            
+
             const userData = {
                 first_name: firstName,
                 last_name: lastName,
@@ -560,7 +568,7 @@ function setupRoutes(gptLimiter) {
                 phone: req.body.phone || '',
                 created_at: new Date().toISOString()
             };
-            
+
             // Save to Redis for session (including extra fields for session)
             const sessionData = {
                 ...userData,
@@ -569,7 +577,7 @@ function setupRoutes(gptLimiter) {
                 session_id: sessionId
             };
             await redisClient.setJSON(`user:${sessionId}`, sessionData, 86400);
-            
+
             // Save to Supabase for persistence
             if (supabaseClient.isConnected) {
                 try {
@@ -580,7 +588,7 @@ function setupRoutes(gptLimiter) {
                     console.warn('Supabase user save failed:', supabaseError.message);
                 }
             }
-            
+
             res.json({ success: true, sessionId });
         } catch (error) {
             console.error('User registration error:', error);
@@ -593,14 +601,14 @@ function setupRoutes(gptLimiter) {
         try {
             const resultsData = req.body;
             const sessionId = req.sessionID;
-            
+
             // Transform frontend data format to backend format
             const assessmentData = {
                 freeResponses: resultsData.freeResponses || {},
                 allAnswers: resultsData.allAnswers || {},
                 timestamp: resultsData.timestamp
             };
-            
+
             const userInfo = resultsData.user || {};
             const score = resultsData.scores?.overall || 0;
             const sectionScores = {
@@ -611,9 +619,9 @@ function setupRoutes(gptLimiter) {
                 culture: resultsData.scores?.culture || 0,
                 governance: resultsData.scores?.automation || 0 // Map automation to governance
             };
-            
+
             console.log('📊 Processing results with free responses:', Object.keys(assessmentData.freeResponses));
-            
+
             // Call the existing assessment completion logic directly
             const completedData = {
                 assessmentData,
@@ -622,13 +630,13 @@ function setupRoutes(gptLimiter) {
                 sectionScores,
                 completedAt: new Date().toISOString()
             };
-            
+
             // Cache completed assessment in Redis
             await redisClient.setJSON(`completed:${sessionId}`, completedData, 86400);
-            
+
             let assessmentId = null;
             let userId = null;
-            
+
             // Create or get user first
             if (supabaseClient.isConnected && userInfo?.email) {
                 try {
@@ -637,7 +645,7 @@ function setupRoutes(gptLimiter) {
                         .from('users')
                         .select('id')
                         .eq('email', userInfo.email);
-                    
+
                     if (existingUsers && existingUsers.length > 0) {
                         userId = existingUsers[0].id;
                         console.log('📋 Found existing user:', userId);
@@ -653,13 +661,13 @@ function setupRoutes(gptLimiter) {
                             company_size: userInfo.companySize || '',
                             created_at: new Date().toISOString()
                         };
-                        
+
                         const { data: newUser } = await supabaseClient.client
                             .from('users')
                             .insert(newUserData)
                             .select('id')
                             .single();
-                        
+
                         userId = newUser?.id;
                         console.log('👤 Created new user:', userId);
                     }
@@ -667,7 +675,7 @@ function setupRoutes(gptLimiter) {
                     console.warn('User creation/lookup failed:', userError.message);
                 }
             }
-            
+
             // Save to Supabase for permanent storage
             if (supabaseClient.isConnected) {
                 try {
@@ -683,27 +691,27 @@ function setupRoutes(gptLimiter) {
                         status: 'completed',
                         completed_at: new Date().toISOString()
                     };
-                    
+
                     const created = await supabaseClient.saveAssessment(supabaseData);
                     assessmentId = created?.id;
                 } catch (supabaseError) {
                     console.warn('Supabase completion save failed:', supabaseError.message);
                 }
             }
-            
+
             // Create HubSpot lead if email provided and HubSpot connected
             let hubspotContact = null;
             let hubspotDeal = null;
-            
+
             if (hubspotClient.isConnected && userInfo?.email) {
                 try {
                     // Check if contact already exists
                     const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
-                    
+
                     if (existingContact) {
                         hubspotContact = await hubspotClient.updateContactAssessment(
-                            userInfo.email, 
-                            assessmentId, 
+                            userInfo.email,
+                            assessmentId,
                             {
                                 ai_readiness_score: score.toString(),
                                 last_assessment_date: new Date().toISOString().split('T')[0]
@@ -712,47 +720,47 @@ function setupRoutes(gptLimiter) {
                         console.log('📊 Updated existing HubSpot contact');
                     } else {
                         hubspotContact = await hubspotClient.createContactFromAssessment(
-                            assessmentData, 
-                            userInfo, 
-                            score, 
+                            assessmentData,
+                            userInfo,
+                            score,
                             sectionScores
                         );
                         console.log('🎯 Created new HubSpot contact');
                     }
-                    
+
                     // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
                     if (hubspotContact) {
                         const dealStage = score >= 70 ? 'qualified' : 'unqualified';
                         hubspotDeal = await hubspotClient.createDealFromAssessment(
-                            hubspotContact.id, 
-                            assessmentData, 
-                            score, 
+                            hubspotContact.id,
+                            assessmentData,
+                            score,
                             userInfo,
                             dealStage
                         );
-                        
+
                         if (hubspotDeal) {
                             const dealType = score >= 70 ? 'qualified' : 'unqualified';
                             console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
                         }
                     }
-                    
+
                     // Add assessment insights as note with free responses
                     if (hubspotContact) {
                         const keyInsights = generateKeyInsights(sectionScores, score);
                         const freeResponses = assessmentData?.freeResponses || {};
                         await hubspotClient.addAssessmentNote(hubspotContact.id, score, keyInsights, freeResponses);
                     }
-                    
+
                 } catch (hubspotError) {
                     console.warn('HubSpot integration failed:', hubspotError.message);
                 }
             }
-            
-            res.json({ 
-                success: true, 
-                sessionId, 
-                score, 
+
+            res.json({
+                success: true,
+                sessionId,
+                score,
                 sectionScores,
                 hubspot: {
                     contactCreated: !!hubspotContact,
@@ -769,7 +777,7 @@ function setupRoutes(gptLimiter) {
     // Error handling middleware
     app.use((error, req, res, next) => {
         console.error('Server Error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error',
             message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
         });
