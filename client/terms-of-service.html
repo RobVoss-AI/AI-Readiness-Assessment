@@ -9,13 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5JLD64W2R9"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-5JLD64W2R9');
-    </script>
+    <script src="scripts/gtag.js"></script>
     <style>
         * {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -188,16 +182,7 @@
         </div>
     </footer>
 
-    <script>
-        // Set current date and year
-        const now = new Date();
-        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        document.getElementById('currentYear').textContent = now.getFullYear();
-    </script>
+    <script src="scripts/date-year.js"></script>
 
 </body>
 </html>

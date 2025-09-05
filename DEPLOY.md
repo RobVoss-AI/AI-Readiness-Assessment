@@ -69,7 +69,7 @@ The `netlify.toml` file includes:
    PORT=3001
    FRONTEND_URL=https://assessment.vossaiconsulting.com
    SUPABASE_URL=your-supabase-url
-   SUPABASE_SERVICE_ROLE_KEY=your-key
+   SUPABASE_API_KEY=your-key
    HUBSPOT_ACCESS_TOKEN=your-token
    SESSION_SECRET=your-secure-secret
    # Redis will be deployed as part of the container

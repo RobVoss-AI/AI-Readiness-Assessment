@@ -6,26 +6,31 @@ class SupabaseClient {
         this.isConnected = false;
     }
 
-    initialize() {
+    async initialize() {
         try {
             const supabaseUrl = process.env.SUPABASE_URL;
-            const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+            const supabaseApiKey = process.env.SUPABASE_API_KEY;
 
-            if (!supabaseUrl || !supabaseServiceKey) {
+            if (!supabaseUrl || !supabaseApiKey) {
                 console.warn('⚠️  Supabase credentials not found in environment variables');
-                console.warn('   Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env');
+                console.warn('   Add SUPABASE_URL and SUPABASE_API_KEY to .env');
                 return null;
             }
 
-            this.client = createClient(supabaseUrl, supabaseServiceKey, {
+            this.client = createClient(supabaseUrl, supabaseApiKey, {
                 auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
+                    autoRefreshToken: true,
+                    persistSession: true
                 }
             });
 
-            this.isConnected = true;
-            console.log('✅ Supabase client initialized');
+            this.isConnected = await this.testConnection();
+
+            if (this.isConnected) {
+                console.log('✅ Supabase client initialized');
+            } else {
+                console.log('❌ Failed to initialize Supabase');
+            }
             return this.client;
         } catch (error) {
             console.error('❌ Failed to initialize Supabase:', error.message);
@@ -34,10 +39,26 @@ class SupabaseClient {
         }
     }
 
+    async testConnection() {
+        const { data, error } = await this.client
+            .from('questions')
+            .select('*')
+            .limit(1);
+
+        if (error) {
+            console.error('❌ Connection failed:', error);
+            return false;
+        }
+
+        console.log('✅ Successful connection:', data);
+        return true;
+    }
+
+
     // Assessment management
     async saveAssessment(data) {
         if (!this.client) return null;
-        
+
         try {
             const { data: result, error } = await this.client
                 .from('assessments')
@@ -54,7 +75,7 @@ class SupabaseClient {
 
     async getAssessment(id) {
         if (!this.client) return null;
-        
+
         try {
             const { data, error } = await this.client
                 .from('assessments')
@@ -72,7 +93,7 @@ class SupabaseClient {
 
     async updateAssessment(id, updates) {
         if (!this.client) return null;
-        
+
         try {
             const { data, error } = await this.client
                 .from('assessments')
@@ -91,7 +112,7 @@ class SupabaseClient {
     // User management
     async createUser(userData) {
         if (!this.client) return null;
-        
+
         try {
             const { data, error } = await this.client
                 .from('users')
@@ -108,7 +129,7 @@ class SupabaseClient {
 
     async getUser(email) {
         if (!this.client) return null;
-        
+
         try {
             const { data, error } = await this.client
                 .from('users')
@@ -127,20 +148,20 @@ class SupabaseClient {
     // Question management
     async getQuestions(filters = {}) {
         if (!this.client) return null;
-        
+
         try {
             let query = this.client.from('questions').select('*');
-            
+
             if (filters.industry) {
                 query = query.contains('industries', [filters.industry]);
             }
-            
+
             if (filters.role) {
                 query = query.contains('roles', [filters.role]);
             }
-            
+
             const { data, error } = await query;
-            
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -152,7 +173,7 @@ class SupabaseClient {
     // Analytics
     async getAssessmentStats() {
         if (!this.client) return null;
-        
+
         try {
             const { data, error } = await this.client
                 .from('assessments')
@@ -170,7 +191,7 @@ class SupabaseClient {
     // Real-time subscriptions
     subscribeToAssessments(callback) {
         if (!this.client) return null;
-        
+
         return this.client
             .channel('assessments')
             .on('postgres_changes', {
