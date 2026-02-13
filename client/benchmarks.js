@@ -21,8 +21,8 @@ const industryBenchmarks = {
         },
         insights: {
             strengths: ['Data governance', 'Technology infrastructure', 'Regulatory compliance'],
-            challenges: ['Cultural resistance', 'Legacy system integration', 'Change management'],
-            opportunities: ['Fraud detection', 'Risk assessment', 'Customer service automation', 'Regulatory reporting']
+            challenges: ['Cultural resistance to AI', 'Legacy system integration', 'AI governance and ethics'],
+            opportunities: ['AI-powered fraud detection', 'Generative AI for compliance reporting', 'Intelligent customer service agents', 'AI-driven risk modeling']
         }
     },
     'Healthcare': {
@@ -41,135 +41,135 @@ const industryBenchmarks = {
             p90: { strategy: 90, operations: 92, technology: 88, data: 95, culture: 92, automation: 90 }
         },
         insights: {
-            strengths: ['Patient-focused culture', 'Data richness', 'Operational efficiency focus'],
-            challenges: ['HIPAA compliance', 'Legacy EHR systems', 'Staff training'],
-            opportunities: ['Diagnostic assistance', 'Patient monitoring', 'Administrative automation', 'Predictive analytics']
+            strengths: ['Patient-focused culture', 'Rich clinical data', 'Operational efficiency focus'],
+            challenges: ['HIPAA and AI compliance', 'Legacy EHR integration', 'Clinician AI training'],
+            opportunities: ['AI-assisted diagnostics', 'Intelligent patient monitoring', 'Administrative workflow automation', 'Clinical documentation with generative AI']
         }
     },
     'Education': {
         averages: {
-            strategy: 60,
+            strategy: 62,
             operations: 65,
-            technology: 58,
+            technology: 60,
             data: 68,
-            culture: 75,
+            culture: 78,
             automation: 62
         },
         percentiles: {
-            p25: { strategy: 48, operations: 52, technology: 45, data: 55, culture: 62, automation: 48 },
-            p50: { strategy: 60, operations: 65, technology: 58, data: 68, culture: 75, automation: 62 },
-            p75: { strategy: 75, operations: 78, technology: 72, data: 82, culture: 88, automation: 78 },
-            p90: { strategy: 85, operations: 88, technology: 85, data: 92, culture: 95, automation: 88 }
+            p25: { strategy: 50, operations: 52, technology: 48, data: 55, culture: 65, automation: 48 },
+            p50: { strategy: 62, operations: 65, technology: 60, data: 68, culture: 78, automation: 62 },
+            p75: { strategy: 76, operations: 78, technology: 74, data: 82, culture: 90, automation: 78 },
+            p90: { strategy: 86, operations: 88, technology: 86, data: 92, culture: 96, automation: 88 }
         },
         insights: {
-            strengths: ['Learning-focused culture', 'Collaborative environment', 'Student-centric approach'],
-            challenges: ['Budget constraints', 'Technology gaps', 'Faculty training'],
-            opportunities: ['Personalized learning', 'Student analytics', 'Administrative efficiency', 'Content creation']
+            strengths: ['Learning-focused culture', 'Collaborative environment', 'Early generative AI adoption by faculty'],
+            challenges: ['Budget constraints', 'AI policy development', 'Academic integrity concerns'],
+            opportunities: ['AI-powered personalized learning', 'Student success analytics', 'Administrative automation', 'AI-assisted content and curriculum development']
         }
     },
     'Technology': {
         averages: {
-            strategy: 80,
-            operations: 75,
-            technology: 85,
-            data: 82,
-            culture: 78,
-            automation: 80
+            strategy: 82,
+            operations: 78,
+            technology: 88,
+            data: 84,
+            culture: 80,
+            automation: 85
         },
         percentiles: {
-            p25: { strategy: 68, operations: 62, technology: 72, data: 70, culture: 65, automation: 68 },
-            p50: { strategy: 80, operations: 75, technology: 85, data: 82, culture: 78, automation: 80 },
-            p75: { strategy: 92, operations: 88, technology: 95, data: 92, culture: 90, automation: 92 },
-            p90: { strategy: 97, operations: 95, technology: 98, data: 97, culture: 95, automation: 97 }
+            p25: { strategy: 70, operations: 65, technology: 75, data: 72, culture: 68, automation: 72 },
+            p50: { strategy: 82, operations: 78, technology: 88, data: 84, culture: 80, automation: 85 },
+            p75: { strategy: 93, operations: 90, technology: 96, data: 93, culture: 92, automation: 94 },
+            p90: { strategy: 97, operations: 95, technology: 98, data: 97, culture: 96, automation: 98 }
         },
         insights: {
-            strengths: ['Technical expertise', 'Innovation culture', 'Agile processes'],
-            challenges: ['Scaling AI initiatives', 'ROI measurement', 'Cross-team coordination'],
-            opportunities: ['Product enhancement', 'Process optimization', 'Customer insights', 'Automated testing']
+            strengths: ['Technical AI expertise', 'Innovation culture', 'AI-native development practices'],
+            challenges: ['Scaling AI across all functions', 'Responsible AI governance', 'AI talent retention'],
+            opportunities: ['AI-powered product features', 'AI coding assistants and agents', 'Intelligent customer insights', 'AI-driven QA and testing']
         }
     },
     'Manufacturing': {
         averages: {
-            strategy: 65,
-            operations: 78,
-            technology: 70,
-            data: 68,
-            culture: 65,
-            automation: 75
+            strategy: 66,
+            operations: 80,
+            technology: 72,
+            data: 70,
+            culture: 66,
+            automation: 78
         },
         percentiles: {
-            p25: { strategy: 52, operations: 65, technology: 58, data: 55, culture: 52, automation: 62 },
-            p50: { strategy: 65, operations: 78, technology: 70, data: 68, culture: 65, automation: 75 },
-            p75: { strategy: 78, operations: 90, technology: 83, data: 82, culture: 78, automation: 88 },
-            p90: { strategy: 88, operations: 95, technology: 92, data: 92, culture: 88, automation: 95 }
+            p25: { strategy: 54, operations: 67, technology: 60, data: 57, culture: 54, automation: 65 },
+            p50: { strategy: 66, operations: 80, technology: 72, data: 70, culture: 66, automation: 78 },
+            p75: { strategy: 80, operations: 92, technology: 85, data: 84, culture: 80, automation: 90 },
+            p90: { strategy: 90, operations: 96, technology: 94, data: 93, culture: 90, automation: 96 }
         },
         insights: {
-            strengths: ['Process optimization focus', 'Operational efficiency', 'Quality control'],
-            challenges: ['Legacy equipment', 'Workforce training', 'System integration'],
-            opportunities: ['Predictive maintenance', 'Quality control', 'Supply chain optimization', 'Energy management']
+            strengths: ['Process optimization maturity', 'Operational data availability', 'Existing automation foundation'],
+            challenges: ['Legacy equipment integration', 'Workforce AI upskilling', 'IT/OT convergence for AI'],
+            opportunities: ['AI predictive maintenance', 'Computer vision quality control', 'AI-optimized supply chains', 'Generative AI for design and engineering']
         }
     },
     'Legal': {
         averages: {
-            strategy: 58,
-            operations: 62,
-            technology: 60,
-            data: 72,
-            culture: 60,
-            automation: 65
+            strategy: 62,
+            operations: 65,
+            technology: 62,
+            data: 74,
+            culture: 62,
+            automation: 68
         },
         percentiles: {
-            p25: { strategy: 45, operations: 48, technology: 47, data: 58, culture: 47, automation: 52 },
-            p50: { strategy: 58, operations: 62, technology: 60, data: 72, culture: 60, automation: 65 },
-            p75: { strategy: 72, operations: 78, technology: 75, data: 85, culture: 75, automation: 80 },
-            p90: { strategy: 83, operations: 88, technology: 87, data: 92, culture: 85, automation: 90 }
+            p25: { strategy: 50, operations: 52, technology: 50, data: 62, culture: 50, automation: 55 },
+            p50: { strategy: 62, operations: 65, technology: 62, data: 74, culture: 62, automation: 68 },
+            p75: { strategy: 76, operations: 80, technology: 78, data: 87, culture: 78, automation: 82 },
+            p90: { strategy: 86, operations: 90, technology: 90, data: 94, culture: 87, automation: 92 }
         },
         insights: {
-            strengths: ['Document management', 'Analytical thinking', 'Attention to detail'],
-            challenges: ['Conservative culture', 'Client confidentiality', 'Billing model changes'],
-            opportunities: ['Document review', 'Legal research', 'Contract analysis', 'Due diligence automation']
+            strengths: ['Document management maturity', 'Analytical thinking', 'Growing AI adoption momentum'],
+            challenges: ['Client confidentiality with AI', 'Risk-averse culture', 'AI ethics and bias concerns'],
+            opportunities: ['AI-powered document review and contract analysis', 'Legal research with LLMs', 'AI-assisted due diligence', 'Generative AI for drafting and summarization']
         }
     },
     'Retail': {
         averages: {
-            strategy: 70,
-            operations: 75,
-            technology: 68,
-            data: 70,
-            culture: 68,
-            automation: 72
+            strategy: 72,
+            operations: 76,
+            technology: 70,
+            data: 72,
+            culture: 70,
+            automation: 74
         },
         percentiles: {
-            p25: { strategy: 58, operations: 62, technology: 55, data: 58, culture: 55, automation: 60 },
-            p50: { strategy: 70, operations: 75, technology: 68, data: 70, culture: 68, automation: 72 },
-            p75: { strategy: 83, operations: 88, technology: 82, data: 83, culture: 82, automation: 85 },
-            p90: { strategy: 92, operations: 95, technology: 92, data: 92, culture: 90, automation: 92 }
+            p25: { strategy: 60, operations: 64, technology: 58, data: 60, culture: 58, automation: 62 },
+            p50: { strategy: 72, operations: 76, technology: 70, data: 72, culture: 70, automation: 74 },
+            p75: { strategy: 85, operations: 90, technology: 84, data: 85, culture: 84, automation: 87 },
+            p90: { strategy: 93, operations: 96, technology: 93, data: 93, culture: 92, automation: 94 }
         },
         insights: {
-            strengths: ['Customer focus', 'Data availability', 'Operational agility'],
-            challenges: ['Seasonal variations', 'Inventory complexity', 'Omnichannel integration'],
-            opportunities: ['Personalization', 'Inventory optimization', 'Customer service', 'Demand forecasting']
+            strengths: ['Customer data richness', 'Omnichannel data integration', 'Fast adoption of AI tools'],
+            challenges: ['Data privacy across channels', 'AI personalization at scale', 'Workforce AI training'],
+            opportunities: ['AI-powered personalization and recommendations', 'Intelligent inventory and demand forecasting', 'Generative AI for marketing content', 'AI customer service agents']
         }
     },
     'Consulting': {
         averages: {
-            strategy: 75,
-            operations: 72,
-            technology: 70,
-            data: 68,
-            culture: 80,
-            automation: 70
+            strategy: 78,
+            operations: 74,
+            technology: 72,
+            data: 70,
+            culture: 82,
+            automation: 74
         },
         percentiles: {
-            p25: { strategy: 62, operations: 58, technology: 58, data: 55, culture: 68, automation: 58 },
-            p50: { strategy: 75, operations: 72, technology: 70, data: 68, culture: 80, automation: 70 },
-            p75: { strategy: 88, operations: 85, technology: 83, data: 82, culture: 92, automation: 83 },
-            p90: { strategy: 95, operations: 92, technology: 92, data: 90, culture: 97, automation: 92 }
+            p25: { strategy: 66, operations: 62, technology: 60, data: 58, culture: 70, automation: 62 },
+            p50: { strategy: 78, operations: 74, technology: 72, data: 70, culture: 82, automation: 74 },
+            p75: { strategy: 90, operations: 87, technology: 85, data: 84, culture: 93, automation: 87 },
+            p90: { strategy: 96, operations: 93, technology: 93, data: 92, culture: 97, automation: 94 }
         },
         insights: {
-            strengths: ['Strategic thinking', 'Change management', 'Client focus'],
-            challenges: ['Project-based work', 'Knowledge management', 'Scalability'],
-            opportunities: ['Client insights', 'Proposal automation', 'Knowledge management', 'Delivery optimization']
+            strengths: ['Strategic AI thinking', 'Change management expertise', 'High generative AI adoption'],
+            challenges: ['Standardizing AI across projects', 'Knowledge management at scale', 'Client data governance'],
+            opportunities: ['AI-augmented client insights', 'Generative AI for proposal and report creation', 'AI-powered knowledge management', 'Intelligent project delivery']
         }
     }
 };
@@ -191,7 +191,7 @@ router.get('/industry/:industry', (req, res) => {
             industry,
             ...benchmarkData,
             sampleSize: getIndustrySampleSize(industry),
-            lastUpdated: '2024-12-01'
+            lastUpdated: '2026-01-15'
         });
         
     } catch (error) {
@@ -297,14 +297,14 @@ router.get('/industries', (req, res) => {
 function getIndustrySampleSize(industry) {
     // Mock sample sizes (in production, get from database)
     const sampleSizes = {
-        'Finance & Banking': 247,
-        'Healthcare': 189,
-        'Education': 156,
-        'Technology': 312,
-        'Manufacturing': 198,
-        'Legal': 87,
-        'Retail': 203,
-        'Consulting': 134
+        'Finance & Banking': 384,
+        'Healthcare': 296,
+        'Education': 243,
+        'Technology': 512,
+        'Manufacturing': 318,
+        'Legal': 156,
+        'Retail': 347,
+        'Consulting': 228
     };
     
     return sampleSizes[industry] || 50;

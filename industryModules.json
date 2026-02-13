@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "version": "1.0",
-    "lastUpdated": "2025-01-06",
-    "description": "Modular question bank for AI Opportunity Scorecard"
+    "version": "2.0",
+    "lastUpdated": "2026-02-13",
+    "description": "Modular question bank for AI Readiness Assessment — updated for the 2025/2026 AI landscape"
   },
   "sections": [
     {
       "id": "strategy",
       "title": "AI Strategy & Vision",
-      "description": "Assess your organization's strategic approach to AI adoption",
+      "description": "Assess your organization's strategic approach to AI adoption and governance",
       "weight": 1.2,
       "questions": [
         {
@@ -18,15 +18,15 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our organization has a clear, documented vision for how AI will create business value",
+          "question": "Our organization has a clear, documented AI strategy that connects to specific business objectives.",
           "options": [
             "Strongly Disagree",
-            "Disagree", 
+            "Disagree",
             "Unsure",
             "Agree",
             "Strongly Agree"
           ],
-          "helpText": "A clear AI vision aligns initiatives with business goals"
+          "helpText": "A clear AI strategy aligns initiatives with business goals and prevents scattered adoption"
         },
         {
           "id": "strategy_problems",
@@ -35,11 +35,11 @@
           "required": true,
           "roles": ["Manager", "Executive"],
           "industries": ["all"],
-          "question": "We have identified specific, measurable business problems that AI could help solve",
+          "question": "We have identified concrete use cases where AI — including generative AI and AI agents — can drive measurable outcomes (e.g., cost reduction, revenue growth, quality improvement).",
           "options": [
             "Strongly Disagree",
             "Disagree",
-            "Unsure", 
+            "Unsure",
             "Agree",
             "Strongly Agree"
           ]
@@ -51,12 +51,12 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our leadership team actively champions and supports AI initiatives",
+          "question": "Senior leaders actively champion AI initiatives by setting goals, allocating resources, and removing barriers.",
           "options": [
             "Strongly Disagree",
             "Disagree",
             "Unsure",
-            "Agree", 
+            "Agree",
             "Strongly Agree"
           ]
         },
@@ -71,8 +71,8 @@
           "options": [
             "No specific AI budget allocated",
             "Exploring budget options for AI pilots",
-            "Small budget for initial AI experiments", 
-            "Dedicated budget for multiple AI projects",
+            "Small budget for initial AI experiments",
+            "Dedicated budget for multiple AI initiatives",
             "Significant investment in AI transformation"
           ]
         },
@@ -86,10 +86,10 @@
           "question": "Which stage best describes your organization's AI maturity?",
           "options": [
             "No formal AI strategy or initiatives",
-            "Early exploration and learning phase",
-            "Running pilot projects and experiments",
-            "Scaling successful AI use cases",
-            "AI fully integrated into business strategy"
+            "Early exploration — learning about AI capabilities",
+            "Running pilot projects with generative AI or automation",
+            "Scaling successful AI use cases across departments",
+            "AI deeply integrated into business strategy and operations"
           ]
         },
         {
@@ -100,14 +100,14 @@
           "roles": ["Manager", "Executive"],
           "industries": ["all"],
           "question": "What are your organization's top 3 business priorities that could benefit from AI? (Optional)",
-          "placeholder": "e.g., Customer service efficiency, operational cost reduction, data-driven decision making"
+          "placeholder": "e.g., Customer experience, operational efficiency, data-driven decision making, content creation"
         }
       ]
     },
     {
-      "id": "operations", 
+      "id": "operations",
       "title": "Operational Readiness",
-      "description": "Evaluate how well your operations can integrate AI solutions",
+      "description": "Evaluate how well your operations can integrate AI-powered solutions",
       "weight": 1.0,
       "questions": [
         {
@@ -117,7 +117,7 @@
           "required": true,
           "roles": ["Manager", "Executive"],
           "industries": ["all"],
-          "question": "We have documented and mapped our key business processes in detail",
+          "question": "We have documented and mapped our key business processes to identify high-impact AI integration points.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -128,15 +128,15 @@
         },
         {
           "id": "ops_automation_candidates",
-          "type": "likert", 
+          "type": "likert",
           "weight": 1.3,
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "We have identified repetitive, rule-based tasks that could be automated",
+          "question": "We have identified tasks suitable for AI augmentation — including content generation, summarization, data analysis, and decision support.",
           "options": [
             "Strongly Disagree",
-            "Disagree", 
+            "Disagree",
             "Unsure",
             "Agree",
             "Strongly Agree"
@@ -149,11 +149,11 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our operational teams are receptive to process changes enabled by AI",
+          "question": "Our operational teams are trained to work alongside AI tools and are receptive to AI-enabled process changes.",
           "options": [
             "Strongly Disagree",
             "Disagree",
-            "Unsure", 
+            "Unsure",
             "Agree",
             "Strongly Agree"
           ]
@@ -168,10 +168,10 @@
           "question": "Which operational area would benefit most from AI enhancement?",
           "options": [
             "Customer service and support",
-            "Supply chain and logistics",
+            "Content creation and marketing",
             "Financial operations and reporting",
-            "Human resources and talent management", 
-            "Sales and marketing processes",
+            "Human resources and talent management",
+            "Sales enablement and lead qualification",
             "Product development and innovation"
           ]
         },
@@ -182,15 +182,15 @@
           "required": false,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "What are the biggest operational bottlenecks that AI might help address? (Optional)",
-          "placeholder": "e.g., Manual data entry, slow approval processes, inconsistent quality control"
+          "question": "What specific operational processes or tasks would you most like to improve with AI? (Optional)",
+          "placeholder": "e.g., Report generation, customer inquiry routing, document summarization, data entry"
         }
       ]
     },
     {
       "id": "technology",
-      "title": "Technology Infrastructure", 
-      "description": "Assess your technical readiness for AI implementation",
+      "title": "Technology Infrastructure",
+      "description": "Assess your technical readiness for AI deployment and integration",
       "weight": 1.1,
       "questions": [
         {
@@ -199,8 +199,8 @@
           "weight": 1.3,
           "required": true,
           "roles": ["all"],
-          "industries": ["all"], 
-          "question": "Our current IT infrastructure can support AI applications and workloads",
+          "industries": ["all"],
+          "question": "Our IT infrastructure supports AI workloads including API integrations with AI platforms, LLM providers, and cloud AI services.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -216,9 +216,9 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "We have experience with cloud computing platforms and services",
+          "question": "We have experience deploying and managing cloud-based AI services, SaaS AI tools, or AI-enabled applications.",
           "options": [
-            "Strongly Disagree", 
+            "Strongly Disagree",
             "Disagree",
             "Unsure",
             "Agree",
@@ -232,12 +232,12 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our systems are well-integrated with APIs and automated data flows",
+          "question": "Our systems support secure data flows to and from AI services with proper access controls and audit trails.",
           "options": [
             "Strongly Disagree",
             "Disagree",
             "Unsure",
-            "Agree", 
+            "Agree",
             "Strongly Agree"
           ]
         },
@@ -250,12 +250,12 @@
           "industries": ["all"],
           "question": "Which AI technologies has your organization explored or implemented?",
           "options": [
-            "None yet - we're just starting to explore",
+            "None yet — we're just starting to explore",
             "Basic automation tools (RPA, workflow automation)",
-            "Machine learning for data analysis",
-            "Natural language processing (chatbots, text analysis)",
-            "Computer vision or image recognition",
-            "Generative AI (ChatGPT, content creation)"
+            "Generative AI for content creation (ChatGPT, Claude, Copilot)",
+            "AI-powered analytics and business intelligence",
+            "AI agents or autonomous workflows",
+            "Custom AI models or fine-tuned solutions"
           ]
         },
         {
@@ -267,12 +267,12 @@
           "industries": ["all"],
           "question": "What is your primary technology constraint for AI adoption?",
           "options": [
-            "Legacy systems that are difficult to integrate",
-            "Insufficient cloud infrastructure",
-            "Security and compliance requirements", 
-            "Lack of technical expertise in-house",
-            "Budget limitations for technology upgrades",
-            "Unclear technology roadmap and priorities"
+            "Legacy systems that are difficult to integrate with AI",
+            "Data security and privacy concerns with AI services",
+            "Lack of AI/ML technical expertise in-house",
+            "Budget limitations for AI tools and infrastructure",
+            "No clear AI technology roadmap or evaluation criteria",
+            "Vendor lock-in concerns with AI platforms"
           ]
         }
       ]
@@ -280,7 +280,7 @@
     {
       "id": "data",
       "title": "Data Quality & Governance",
-      "description": "Evaluate your data readiness for AI applications", 
+      "description": "Evaluate your data readiness for AI applications and model integration",
       "weight": 1.3,
       "questions": [
         {
@@ -290,7 +290,7 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "We have high-quality, well-structured data available for AI projects",
+          "question": "We have high-quality, well-structured data that can be used to provide context to AI models (e.g., for RAG, fine-tuning, or analytics).",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -306,10 +306,10 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our data is well-organized and easily accessible to relevant teams",
+          "question": "Our data is well-organized and accessible for use in AI applications, with appropriate permissions and search capabilities.",
           "options": [
             "Strongly Disagree",
-            "Disagree", 
+            "Disagree",
             "Unsure",
             "Agree",
             "Strongly Agree"
@@ -322,7 +322,7 @@
           "required": true,
           "roles": ["Manager", "Executive"],
           "industries": ["all"],
-          "question": "We have strong data governance policies and procedures in place",
+          "question": "We have data governance policies that address AI-specific concerns — including training data rights, model outputs, and intellectual property.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -338,7 +338,7 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "We regularly collect and analyze customer and operational data", 
+          "question": "We have clear data privacy frameworks that cover AI data processing and comply with current regulations (e.g., GDPR, state privacy laws, industry standards).",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -358,10 +358,10 @@
           "options": [
             "Poor data quality and inconsistencies",
             "Data scattered across disconnected systems",
-            "Insufficient relevant data for AI training",
-            "Privacy, security, and compliance concerns",
-            "Limited data analysis and interpretation skills",
-            "Inadequate data storage and processing infrastructure"
+            "Unclear data rights for AI training and processing",
+            "Privacy, security, and compliance concerns with AI",
+            "Limited ability to prepare data for AI consumption (e.g., RAG, embeddings)",
+            "Inadequate data infrastructure for AI workloads"
           ]
         }
       ]
@@ -369,7 +369,7 @@
     {
       "id": "culture",
       "title": "Organizational Culture",
-      "description": "Assess cultural readiness for AI adoption and change",
+      "description": "Assess cultural readiness for AI adoption and workforce transformation",
       "weight": 1.0,
       "questions": [
         {
@@ -379,7 +379,7 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our employees are generally enthusiastic about AI adoption and its potential",
+          "question": "Our employees actively use AI tools in their daily work and are open to expanding AI adoption across the organization.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -395,12 +395,12 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "We have a culture that embraces and adapts well to technological change",
+          "question": "Teams adapt quickly to new AI capabilities, share best practices, and embrace AI-driven changes to their workflows.",
           "options": [
             "Strongly Disagree",
             "Disagree",
             "Unsure",
-            "Agree", 
+            "Agree",
             "Strongly Agree"
           ]
         },
@@ -411,7 +411,7 @@
           "required": true,
           "roles": ["Manager", "Executive"],
           "industries": ["all"],
-          "question": "Our organization actively invests in upskilling employees for new technologies",
+          "question": "Our organization invests in AI literacy training and skill development for employees at all levels.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -427,7 +427,7 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Teams across departments collaborate effectively on technology initiatives",
+          "question": "Technical and business teams collaborate effectively to identify high-value AI opportunities and bring solutions to production.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -443,15 +443,15 @@
           "required": false,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "What cultural barriers might hinder AI adoption in your organization? (Optional)",
-          "placeholder": "e.g., Fear of job displacement, resistance to change, lack of technical confidence"
+          "question": "What do you see as the biggest cultural opportunity or barrier to AI adoption in your organization? (Optional)",
+          "placeholder": "e.g., Employees excited to learn AI tools, concerns about job displacement, need for change management"
         }
       ]
     },
     {
       "id": "automation",
-      "title": "Automation Readiness",
-      "description": "Identify current automation experience and opportunities",
+      "title": "AI-Powered Automation",
+      "description": "Evaluate current AI automation capabilities and opportunities",
       "weight": 0.9,
       "questions": [
         {
@@ -461,7 +461,7 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "We have already implemented some form of process automation",
+          "question": "We have implemented AI-powered automation beyond basic rule-based workflows (e.g., intelligent document processing, AI assistants, or agent workflows).",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -477,7 +477,7 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Our employees understand how automation enhances rather than replaces their work",
+          "question": "Our employees understand how AI augments their work and can proactively identify new automation opportunities.",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -493,7 +493,7 @@
           "required": true,
           "roles": ["Manager", "Executive"],
           "industries": ["all"],
-          "question": "We measure and track the impact of automation on business outcomes",
+          "question": "We track and demonstrate ROI from AI-powered automation initiatives with clear metrics (time saved, error reduction, cost impact).",
           "options": [
             "Strongly Disagree",
             "Disagree",
@@ -509,14 +509,14 @@
           "required": true,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "Which area would benefit most from intelligent automation?",
+          "question": "Which area would benefit most from AI-powered automation?",
           "options": [
-            "Document processing and data entry",
-            "Customer support and service requests",
-            "Data validation and quality control",
-            "Reporting and analytics generation",
-            "Employee onboarding and HR processes",
-            "Inventory and supply chain management"
+            "Document processing and intelligent extraction",
+            "Customer support with AI agents and chatbots",
+            "Content generation and marketing automation",
+            "Reporting, analytics, and data visualization",
+            "Code generation and software development",
+            "Knowledge management and search"
           ]
         },
         {
@@ -526,8 +526,8 @@
           "required": false,
           "roles": ["all"],
           "industries": ["all"],
-          "question": "What specific tasks would you prioritize for AI-powered automation? (Optional)",
-          "placeholder": "e.g., Invoice processing, customer inquiry routing, quality inspections"
+          "question": "What would be your ideal next AI automation project or use case? (Optional)",
+          "placeholder": "e.g., AI-powered customer support, automated report generation, intelligent document review, AI coding assistant"
         }
       ]
     }

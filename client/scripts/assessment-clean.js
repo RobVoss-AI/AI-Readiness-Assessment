@@ -26,74 +26,74 @@ const sections = [
     {
         id: 'strategy',
         title: 'AI Strategy & Vision',
-        description: 'Assess your organization\'s strategic approach to AI adoption',
+        description: 'Assess your organization\'s strategic approach to AI adoption and governance',
         questions: [
-            { id: 'strategy_vision', text: 'Our organization has a clear, documented vision for how AI will create business value' },
-            { id: 'strategy_problems', text: 'We have identified specific, measurable business problems that AI could help solve' },
-            { id: 'strategy_leadership', text: 'Our leadership team actively champions and supports AI initiatives' },
-            { id: 'strategy_budget', text: 'We have allocated appropriate budget and resources for AI implementation' },
-            { id: 'strategy_culture', text: 'Our organization has a culture that embraces innovation and technological change' },
+            { id: 'strategy_vision', text: 'Our organization has a clear, documented AI strategy that connects to specific business objectives' },
+            { id: 'strategy_problems', text: 'We have identified concrete use cases where AI — including generative AI and AI agents — can drive measurable outcomes' },
+            { id: 'strategy_leadership', text: 'Senior leaders actively champion AI initiatives by setting goals, allocating resources, and removing barriers' },
+            { id: 'strategy_budget', text: 'We have dedicated budget and staffing for AI initiatives, including tools, training, and implementation' },
+            { id: 'strategy_culture', text: 'Our organization has an AI governance framework that addresses ethics, responsible use, and risk management' },
             { id: 'strategy_open', text: 'What is your biggest strategic challenge or opportunity when it comes to AI adoption?', type: 'textarea' }
         ]
     },
     {
         id: 'operations',
         title: 'Operational Readiness',
-        description: 'Evaluate how well your operations can integrate AI solutions',
+        description: 'Evaluate how well your operations can integrate AI-powered solutions',
         questions: [
-            { id: 'ops_process_mapping', text: 'We have documented and mapped our key business processes in detail' },
-            { id: 'ops_automation_candidates', text: 'We have identified repetitive, rule-based tasks that could be automated' },
-            { id: 'ops_change_readiness', text: 'Our operational teams are receptive to process changes enabled by AI' },
-            { id: 'ops_efficiency_measurement', text: 'We have clear metrics to measure operational efficiency improvements' },
+            { id: 'ops_process_mapping', text: 'We have documented and mapped our key business processes to identify high-impact AI integration points' },
+            { id: 'ops_automation_candidates', text: 'We have identified tasks suitable for AI augmentation — including content generation, summarization, data analysis, and decision support' },
+            { id: 'ops_change_readiness', text: 'Our operational teams are trained to work alongside AI tools and are receptive to AI-enabled process changes' },
+            { id: 'ops_efficiency_measurement', text: 'We have clear metrics to measure productivity and quality gains from AI-assisted workflows' },
             { id: 'ops_open', text: 'What specific operational processes or tasks would you most like to improve with AI?', type: 'textarea' }
         ]
     },
     {
         id: 'technology',
         title: 'Technology Infrastructure',
-        description: 'Assess your technical readiness for AI implementation',
+        description: 'Assess your technical readiness for AI deployment and integration',
         questions: [
-            { id: 'tech_infrastructure', text: 'Our current IT infrastructure can support AI applications and workloads' },
-            { id: 'tech_cloud_experience', text: 'We have experience with cloud computing platforms and services' },
-            { id: 'tech_data_systems', text: 'Our data systems are well-integrated and accessible for AI applications' },
-            { id: 'tech_security', text: 'We have robust cybersecurity measures in place for AI systems' },
+            { id: 'tech_infrastructure', text: 'Our IT infrastructure supports AI workloads including API integrations with AI platforms, LLM providers, and cloud AI services' },
+            { id: 'tech_cloud_experience', text: 'We have experience deploying and managing cloud-based AI services, SaaS AI tools, or AI-enabled applications' },
+            { id: 'tech_data_systems', text: 'Our systems support secure data flows to and from AI services with proper access controls and audit trails' },
+            { id: 'tech_security', text: 'We have established criteria for evaluating, selecting, and governing AI tools — including data residency, model transparency, and vendor risk' },
             { id: 'tech_open', text: 'What are your biggest technology concerns or gaps when it comes to implementing AI?', type: 'textarea' }
         ]
     },
     {
         id: 'data',
         title: 'Data Quality & Governance',
-        description: 'Evaluate your data readiness for AI applications',
+        description: 'Evaluate your data readiness for AI applications and model integration',
         questions: [
-            { id: 'data_quality', text: 'We have high-quality, well-structured data available for AI projects' },
-            { id: 'data_accessibility', text: 'Our data is well-organized and easily accessible to relevant teams' },
-            { id: 'data_governance', text: 'We have strong data governance policies and procedures in place' },
-            { id: 'data_privacy', text: 'We have clear data privacy and compliance frameworks established' },
+            { id: 'data_quality', text: 'We have high-quality, well-structured data that can be used to provide context to AI models (e.g., for RAG, fine-tuning, or analytics)' },
+            { id: 'data_accessibility', text: 'Our data is well-organized and accessible for use in AI applications, with appropriate permissions and search capabilities' },
+            { id: 'data_governance', text: 'We have data governance policies that address AI-specific concerns — including training data rights, model outputs, and intellectual property' },
+            { id: 'data_privacy', text: 'We have clear data privacy frameworks that cover AI data processing and comply with current regulations (e.g., GDPR, state privacy laws, industry standards)' },
             { id: 'data_open', text: 'What data challenges or opportunities do you see for AI implementation in your organization?', type: 'textarea' }
         ]
     },
     {
         id: 'culture',
         title: 'Organizational Culture',
-        description: 'Assess cultural readiness for AI adoption and change',
+        description: 'Assess cultural readiness for AI adoption and workforce transformation',
         questions: [
-            { id: 'culture_enthusiasm', text: 'Our employees are generally enthusiastic about AI adoption and its potential' },
-            { id: 'culture_change_embrace', text: 'We have a culture that embraces and adapts well to technological change' },
-            { id: 'culture_learning', text: 'Our organization prioritizes continuous learning and skill development' },
-            { id: 'culture_collaboration', text: 'We foster collaboration between technical and business teams' },
-            { id: 'culture_open', text: 'What do you imagine AI could do for your organization?', type: 'textarea' }
+            { id: 'culture_enthusiasm', text: 'Our employees actively use AI tools in their daily work and are open to expanding AI adoption across the organization' },
+            { id: 'culture_change_embrace', text: 'Teams adapt quickly to new AI capabilities, share best practices, and embrace AI-driven changes to their workflows' },
+            { id: 'culture_learning', text: 'Our organization invests in AI literacy training and skill development for employees at all levels' },
+            { id: 'culture_collaboration', text: 'Technical and business teams collaborate effectively to identify high-value AI opportunities and bring solutions to production' },
+            { id: 'culture_open', text: 'What do you see as the biggest cultural opportunity or barrier to AI adoption in your organization?', type: 'textarea' }
         ]
     },
     {
         id: 'automation',
-        title: 'Automation Readiness',
-        description: 'Identify current automation experience and opportunities',
+        title: 'AI-Powered Automation',
+        description: 'Evaluate current AI automation capabilities and opportunities',
         questions: [
-            { id: 'auto_current_state', text: 'We have already implemented some form of process automation' },
-            { id: 'auto_employee_understanding', text: 'Our employees understand how automation enhances rather than replaces their work' },
-            { id: 'auto_tools_experience', text: 'We have experience with automation tools and technologies' },
-            { id: 'auto_roi_measurement', text: 'We can measure and demonstrate ROI from automation initiatives' },
-            { id: 'auto_open', text: 'What would be your ideal first automation project or AI use case?', type: 'textarea' }
+            { id: 'auto_current_state', text: 'We have implemented AI-powered automation beyond basic rule-based workflows (e.g., intelligent document processing, AI assistants, or agent workflows)' },
+            { id: 'auto_employee_understanding', text: 'Our employees understand how AI augments their work and can proactively identify new automation opportunities' },
+            { id: 'auto_tools_experience', text: 'We have hands-on experience with modern AI automation tools — such as AI coding assistants, AI agents, or AI-integrated business platforms' },
+            { id: 'auto_roi_measurement', text: 'We track and demonstrate ROI from AI-powered automation initiatives with clear metrics (time saved, error reduction, cost impact)' },
+            { id: 'auto_open', text: 'What would be your ideal next AI automation project or use case?', type: 'textarea' }
         ]
     }
 ];

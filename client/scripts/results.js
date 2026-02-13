@@ -356,19 +356,13 @@ window.showDataSummary = () => {
     return summary;
 };
 
-// Global variables for unlock functionality
-let isUnlocked = false;
 let radarChartInstance = null;
 
-// Create radar chart (initially with hidden segments)
+// Create radar chart showing all 6 dimensions
 function createRadarChart() {
     const ctx = document.getElementById('radarChart').getContext('2d');
 
-    // Initially show only 4 segments, hide Data and Automation
-    const chartData = isUnlocked
-        ? [strategyScore, operationsScore, technologyScore, dataScore, cultureScore, automationScore]
-        : [strategyScore, operationsScore, technologyScore, null, cultureScore, null];
-
+    const chartData = [strategyScore, operationsScore, technologyScore, dataScore, cultureScore, automationScore];
     const chartLabels = ['Strategy', 'Operations', 'Technology', 'Data', 'Culture', 'Automation'];
 
     radarChartInstance = new Chart(ctx, {
@@ -397,28 +391,13 @@ function createRadarChart() {
                     position: 'bottom',
                     labels: {
                         padding: 20,
-                        font: { size: 14 },
-                        // Custom label generation to show locked segments
-                        generateLabels: function (chart) {
-                            const originalLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                            if (!isUnlocked) {
-                                // Add visual indicators for locked segments
-                                originalLabels[0].text = 'Your AI Readiness (2 segments locked 🔒)';
-                            }
-                            return originalLabels;
-                        }
+                        font: { size: 14 }
                     }
                 },
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            const label = context.label;
-                            const value = context.parsed.r;
-
-                            if (value === null && !isUnlocked) {
-                                return `${label}: Locked 🔒 - Click to unlock`;
-                            }
-                            return `${label}: ${value}%`;
+                            return `${context.label}: ${context.parsed.r}%`;
                         }
                     }
                 }
@@ -433,17 +412,7 @@ function createRadarChart() {
                         font: { size: 12 }
                     },
                     pointLabels: {
-                        font: { size: 14, weight: 'bold' },
-                        // Custom point label styling for locked segments
-                        generateLabels: function (chart) {
-                            const labels = ['Strategy', 'Operations', 'Technology', 'Data', 'Culture', 'Automation'];
-                            return labels.map((label, index) => {
-                                if (!isUnlocked && (index === 3 || index === 5)) { // Data and Automation
-                                    return `${label} 🔒`;
-                                }
-                                return label;
-                            });
-                        }
+                        font: { size: 14, weight: 'bold' }
                     },
                     grid: { color: 'rgba(0, 0, 0, 0.1)' },
                     angleLines: { color: 'rgba(0, 0, 0, 0.1)' }
@@ -452,13 +421,6 @@ function createRadarChart() {
             animation: {
                 duration: 2000,
                 easing: 'easeInOutQuart'
-            },
-            // Add click handler for locked segments
-            onClick: function (event, elements) {
-                if (!isUnlocked && elements.length === 0) {
-                    // Click on chart but not on a point - might be trying to access locked area
-                    showUnlockModal();
-                }
             }
         }
     });
@@ -586,39 +548,44 @@ function generateActionPlan() {
 
     // Generate actions based on scores
     if (strategyScore < 70) {
-        actions.immediate.push("Define clear AI vision and objectives");
-        actions.shortTerm.push("Develop comprehensive AI strategy document");
+        actions.immediate.push("Define a clear AI strategy tied to specific business objectives");
+        actions.shortTerm.push("Establish an AI governance framework covering ethics, risk, and responsible use");
     }
 
     if (dataScore < 70) {
-        actions.immediate.push("Audit current data quality and accessibility");
-        actions.shortTerm.push("Implement data governance framework");
+        actions.immediate.push("Audit data quality and accessibility for AI readiness (RAG, analytics, fine-tuning)");
+        actions.shortTerm.push("Implement data governance policies addressing AI-specific concerns (IP, training data rights)");
     }
 
     if (technologyScore < 70) {
-        actions.shortTerm.push("Assess and upgrade IT infrastructure");
-        actions.longTerm.push("Implement cloud-first AI architecture");
+        actions.shortTerm.push("Evaluate and adopt cloud-based AI platforms and LLM providers");
+        actions.longTerm.push("Build secure AI integration architecture with proper access controls and audit trails");
     }
 
     if (cultureScore < 70) {
-        actions.immediate.push("Launch AI awareness training program");
-        actions.shortTerm.push("Build change management capabilities");
+        actions.immediate.push("Launch AI literacy training for employees at all levels");
+        actions.shortTerm.push("Create cross-functional AI champions program to drive adoption");
+    }
+
+    if (automationScore < 70) {
+        actions.immediate.push("Identify high-value tasks for AI augmentation (summarization, content generation, analysis)");
+        actions.shortTerm.push("Pilot AI automation tools such as AI assistants, coding copilots, or agent workflows");
     }
 
     // Default actions if scores are good
     if (actions.immediate.length === 0) {
-        actions.immediate.push("Identify pilot AI use cases");
-        actions.immediate.push("Form AI governance committee");
+        actions.immediate.push("Identify next wave of AI use cases across departments");
+        actions.immediate.push("Formalize AI governance and responsible use policies");
     }
 
     if (actions.shortTerm.length === 0) {
-        actions.shortTerm.push("Launch first AI pilot project");
-        actions.shortTerm.push("Establish AI success metrics");
+        actions.shortTerm.push("Scale successful AI implementations with clear ROI metrics");
+        actions.shortTerm.push("Explore AI agent workflows for complex multi-step processes");
     }
 
     if (actions.longTerm.length === 0) {
-        actions.longTerm.push("Scale successful AI implementations");
-        actions.longTerm.push("Build AI center of excellence");
+        actions.longTerm.push("Build an AI center of excellence to accelerate enterprise-wide adoption");
+        actions.longTerm.push("Develop custom AI solutions and fine-tuned models for competitive advantage");
     }
 
     return actions;
@@ -656,86 +623,9 @@ function renderActionPlan() {
 // Set current year in footer
 document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-// Unlock Modal Functions
-function showUnlockModal() {
-    const modal = document.getElementById('unlockModal');
-    modal.classList.add('active');
-
-    // Add escape key listener
-    document.addEventListener('keydown', handleEscapeKey);
-}
-
-document.getElementById('unlockButton').addEventListener('click', showUnlockModal);
-
-function closeUnlockModal() {
-    const modal = document.getElementById('unlockModal');
-    modal.classList.remove('active');
-
-    // Remove escape key listener
-    document.removeEventListener('keydown', handleEscapeKey);
-}
-
-document.getElementById('secondaryButton').addEventListener('click', closeUnlockModal);
-
-function handleEscapeKey(event) {
-    if (event.key === 'Escape') {
-        closeUnlockModal();
-    }
-}
-
-function unlockResults() {
-    // Open Calendly link
-    window.open('https://calendly.com/robvoss-vossaiconsulting/30min', '_blank');
-
-    // Optional: Actually unlock the results after booking
-    // For now, we'll just close the modal
-    closeUnlockModal();
-
-    // You could add logic here to actually unlock if you want
-    // unlockFullResults();
-}
-
-document.getElementById('primaryCta').addEventListener('click', unlockResults);
-
-function unlockFullResults() {
-    isUnlocked = true;
-
-    // Hide the chart overlay
-    const overlay = document.getElementById('chartOverlay');
-    overlay.style.display = 'none';
-
-    // Update the score cards to show hidden scores
-    document.getElementById('dataScore').textContent = `${dataScore}%`;
-    document.getElementById('automationScore').textContent = `${automationScore}%`;
-
-    // Recreate the radar chart with all data
-    if (radarChartInstance) {
-        radarChartInstance.destroy();
-    }
-    createRadarChart();
-
-    // Show success message
-    setTimeout(() => {
-        alert('🎉 Full results unlocked! You can now see your complete AI readiness profile.');
-    }, 500);
-}
-
 // Initialize everything
 setTimeout(() => {
     createRadarChart();
     renderInsights();
     renderActionPlan();
-
-    // Show unlock modal after 10 seconds if not unlocked
-    setTimeout(() => {
-        if (!isUnlocked) {
-            showUnlockModal();
-        }
-    }, 10000);
 }, 1000);
-
-// Make functions available globally
-window.showUnlockModal = showUnlockModal;
-window.closeUnlockModal = closeUnlockModal;
-window.unlockResults = unlockResults;
-window.unlockFullResults = unlockFullResults;

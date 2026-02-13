@@ -12,8 +12,19 @@ const redisClient = require('./utils/redis');
 const supabaseClient = require('./utils/supabase');
 const hubspotClient = require('./utils/hubspot');
 
+const fs = require('fs');
+const path = require('path');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Pre-load question data at startup (avoids synchronous reads on each request)
+let cachedCoreQuestions = null;
+try {
+    cachedCoreQuestions = JSON.parse(fs.readFileSync(path.join(__dirname, 'coreQuestions.json'), 'utf8'));
+} catch (err) {
+    console.warn('⚠️  Could not pre-load coreQuestions.json:', err.message);
+}
 
 // Initialize connections
 async function initializeConnections() {
@@ -58,13 +69,17 @@ async function setupMiddleware() {
 
 
     // Session management with Redis (fallback to memory store)
+    if (!process.env.SESSION_SECRET) {
+        console.warn('⚠️  SESSION_SECRET not set — using random secret (sessions will not persist across restarts)');
+    }
     const sessionConfig = {
-        secret: process.env.SESSION_SECRET || 'ai-scorecard-secret-key',
+        secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
         resave: false,
         saveUninitialized: false,
         cookie: {
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
+            sameSite: 'lax',
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }
     };
@@ -98,23 +113,7 @@ async function setupMiddleware() {
     const limiter = rateLimit(limiterConfig);
     app.use('/api/', limiter);
 
-    // Stricter rate limit for GPT endpoints
-    const gptLimiterConfig = {
-        windowMs: 60 * 60 * 1000, // 1 hour
-        max: 10, // limit each IP to 10 GPT requests per hour
-        standardHeaders: true,
-        legacyHeaders: false,
-    };
-
-    if (redisClient.isConnected && redisClient.client) {
-        gptLimiterConfig.store = new RateLimitRedisStore({
-            sendCommand: (...args) => redisClient.client.sendCommand(args),
-        });
-    }
-
-    const gptLimiter = rateLimit(gptLimiterConfig);
-
-    return gptLimiter;
+    return;
 }
 
 // Helper function to generate key insights for HubSpot notes
@@ -132,12 +131,12 @@ function generateKeyInsights(sectionScores, overallScore) {
 
     // Section-specific insights
     const sections = [
-        { key: 'strategy', name: 'AI Strategy', threshold: 70 },
-        { key: 'data', name: 'Data Infrastructure', threshold: 75 },
-        { key: 'technology', name: 'Technology', threshold: 65 },
-        { key: 'talent', name: 'AI Talent', threshold: 60 },
-        { key: 'culture', name: 'Culture', threshold: 70 },
-        { key: 'governance', name: 'Governance', threshold: 65 }
+        { key: 'strategy', name: 'AI Strategy & Vision', threshold: 70 },
+        { key: 'operations', name: 'Operational Readiness', threshold: 65 },
+        { key: 'technology', name: 'Technology Infrastructure', threshold: 65 },
+        { key: 'data', name: 'Data Quality & Governance', threshold: 75 },
+        { key: 'culture', name: 'Organizational Culture', threshold: 70 },
+        { key: 'automation', name: 'AI-Powered Automation', threshold: 60 }
     ];
 
     sections.forEach(section => {
@@ -161,10 +160,10 @@ async function startServer() {
         await initializeConnections();
 
         // Step 2: Setup middleware after Redis is ready
-        const gptLimiter = await setupMiddleware();
+        await setupMiddleware();
 
         // Step 3: Setup routes (they can use Redis now)
-        setupRoutes(gptLimiter);
+        setupRoutes();
 
         // Step 4: Start the server
         app.listen(PORT, () => {
@@ -180,7 +179,7 @@ async function startServer() {
 }
 
 // Setup routes function
-function setupRoutes(gptLimiter) {
+function setupRoutes() {
     // Assessment API routes with Supabase + Redis hybrid approach
     app.post('/api/assessment/save', async (req, res) => {
         try {
@@ -412,17 +411,10 @@ function setupRoutes(gptLimiter) {
                 }
             }
 
-            // Fallback to JSON files
-            if (!questions) {
-                const fs = require('fs');
-                const path = require('path');
-                try {
-                    const coreQuestions = JSON.parse(fs.readFileSync(path.join(__dirname, 'coreQuestions.json'), 'utf8'));
-                    questions = coreQuestions.sections || [];
-                    await redisClient.setJSON(cacheKey, questions, 1800);
-                } catch (fileError) {
-                    console.warn('Failed to load questions from file:', fileError.message);
-                }
+            // Fallback to cached JSON file data
+            if (!questions && cachedCoreQuestions) {
+                questions = cachedCoreQuestions.sections || [];
+                await redisClient.setJSON(cacheKey, questions, 1800);
             }
 
             res.json({ questions: questions || [] });
@@ -463,17 +455,12 @@ function setupRoutes(gptLimiter) {
                 }
             }
 
-            // Fallback to file
+            // Fallback to bundled benchmarks module
             if (!benchmarks) {
-                const fs = require('fs');
-                const path = require('path');
                 const benchmarksPath = path.join(__dirname, 'client/benchmarks.js');
-
                 if (fs.existsSync(benchmarksPath)) {
-                    delete require.cache[require.resolve('./client/benchmarks.js')];
                     const benchmarksModule = require('./client/benchmarks.js');
                     benchmarks = typeof benchmarksModule === 'function' ? benchmarksModule() : benchmarksModule;
-
                     await redisClient.setJSON(cacheKey, benchmarks, 3600);
                 }
             }
