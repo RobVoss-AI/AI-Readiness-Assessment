@@ -1,6 +1,6 @@
 [build]
   # No build process needed for static files
-  publish = "."
+  publish = "client"
   
 [build.environment]
   NODE_ENV = "production"
