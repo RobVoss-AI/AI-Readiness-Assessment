@@ -8,19 +8,21 @@
 
 1. [Product Overview & Pivot](#1-product-overview--pivot)
 2. [User Model & Roles](#2-user-model--roles)
-3. [User Flow (Step by Step)](#3-user-flow-step-by-step)
-4. [Complete Question Bank](#4-complete-question-bank)
-5. [Scoring Engine](#5-scoring-engine)
-6. [Results & Insights Logic](#6-results--insights-logic)
-7. [Organization Dashboard](#7-organization-dashboard)
-8. [Data Model & Schema](#8-data-model--schema)
-9. [API Endpoints](#9-api-endpoints)
-10. [Integrations (HubSpot, Supabase, Redis)](#10-integrations)
-11. [Frontend Architecture](#11-frontend-architecture)
-12. [Configuration & Environment](#12-configuration--environment)
-13. [Deployment](#13-deployment)
-14. [Current Problems to Fix](#14-current-problems-to-fix)
-15. [Tech Stack Decisions](#15-tech-stack-decisions)
+3. [Entry Modes & QR Code Flow](#3-entry-modes--qr-code-flow)
+4. [User Flow (Step by Step)](#4-user-flow-step-by-step)
+5. [Complete Question Bank](#5-complete-question-bank)
+6. [Scoring Engine](#6-scoring-engine)
+7. [Three-Tier Results & Insights](#7-three-tier-results--insights)
+8. [Organization Dashboard](#8-organization-dashboard)
+9. [Data Model & Schema](#9-data-model--schema)
+10. [API Endpoints](#10-api-endpoints)
+11. [Integrations (HubSpot, Supabase, Redis)](#11-integrations)
+12. [Progressive Web App (PWA)](#12-progressive-web-app-pwa)
+13. [Frontend Architecture](#13-frontend-architecture)
+14. [Configuration & Environment](#14-configuration--environment)
+15. [Deployment](#15-deployment)
+16. [Current Problems to Fix](#16-current-problems-to-fix)
+17. [Tech Stack Decisions](#17-tech-stack-decisions)
 
 ---
 
@@ -46,6 +48,20 @@ This assessment is operated by Voss AI Consulting. Completed assessments generat
 - Scores < 70 are "unqualified" leads
 - All completions create contacts and deals in HubSpot CRM
 - Free-text responses are captured as HubSpot notes for sales context
+
+### App Form Factor
+This is a **Progressive Web App (PWA)** — a responsive web application that can be installed on phones, tablets, and desktops. It must work flawlessly on mobile since the primary use case is scanning a QR code at a conference and taking the assessment on a phone. It is NOT a native iOS/Android app — it runs in the browser with PWA capabilities (offline support, home screen install, push notifications).
+
+### Three Tiers of Value
+Results and service recommendations are delivered at three levels:
+
+| Tier | Who Sees It | What It Shows |
+|------|-------------|---------------|
+| **Personal** | The individual who took it | Their own scores, strengths, weaknesses, personal action items |
+| **Team** | Anyone with the org invite link + completed assessment | How their team compares, alignment gaps, team-level recommendations |
+| **Corporate** | Org admin (and Voss AI as the consulting provider) | Full organizational view, role-based breakdowns, strategic engagement recommendations |
+
+Each tier maps to a Voss AI Consulting service offering — from individual AI coaching, to team workshops, to full corporate AI transformation engagements.
 
 ---
 
@@ -91,7 +107,126 @@ This assessment is operated by Voss AI Consulting. Completed assessments generat
 
 ---
 
-## 3. User Flow (Step by Step)
+## 3. Entry Modes & QR Code Flow
+
+The assessment supports multiple entry points. The most important new one is QR code scanning at in-person events.
+
+### Entry Mode 1: QR Code at a Conference (Primary New Mode)
+
+**Setup (by Voss AI before the event)**:
+1. Voss AI creates a **campaign** in the admin panel (or via API) for the event
+2. A campaign generates a unique URL: `https://assess.vossai.com/e/{campaignCode}`
+3. That URL is encoded into a QR code, printed on a banner, badge insert, table tent, or slide
+4. Optionally, a specific organization can be pre-attached to the campaign (for private workshops)
+
+**Attendee experience**:
+```
+1. Scans QR code with phone camera → opens URL in mobile browser
+
+2. Landing page (mobile-optimized, loads in < 2 seconds):
+   → Event/campaign branding (e.g., "AI Readiness Assessment — [Event Name]")
+   → Voss AI Consulting logo
+   → "Takes about 5-7 minutes"
+   → Two sign-in options:
+      a) "Continue with Google" (OAuth — fastest, one tap)
+      b) "Continue with Email" (enter email + first name — no password, no account creation)
+   → Consent checkbox (pre-checked but editable): "I agree to receive my results and occasional AI insights from Voss AI Consulting"
+
+3. Quick profile (only fields not already obtained from OAuth):
+   → Job title (free text, required)
+   → Role level (Executive / Manager / Individual Contributor — 3 buttons, tap one)
+   → Industry (dropdown)
+   → Company name (optional — but prompted: "Add your company to get team-level insights later")
+   → Company size (optional — dropdown)
+   → This entire step should fit on one mobile screen, no scrolling to submit
+
+4. Assessment (same 6 sections as always, but mobile-optimized):
+   → One question per screen on mobile (not all questions in a section at once)
+   → Swipe or tap to advance
+   → Large touch targets for Likert buttons
+   → Progress indicator shows section + overall progress
+   → Auto-saves after each answer (not just each section)
+
+5. Results page → personal tier results (see Section 7)
+   → "Want to see how your team compares? Share this link:" + copy button
+   → CTA: "Book a free consultation with Voss AI" → Calendly link
+```
+
+**Why Google OAuth?**: At a conference, people are on their phones. Typing an email address on a phone is friction. Google sign-in is one tap — it gets you email, first name, and last name instantly. The fallback (email + first name) exists for people who don't use Google or don't want OAuth.
+
+**No passwords. No accounts.** Users are identified by email. If they come back later (same email), their previous assessment is linked. There is no login/logout flow. The session is cookie/token-based and expires after 24 hours. If they want to see their results again, they can re-enter their email and get a magic link, or just retake the assessment.
+
+### Entry Mode 2: Invite Link (Team/Org Mode)
+Same as described in the original spec — an org admin shares a link like `/org/{inviteCode}`. Team members arrive, enter their info, take the assessment, and their results aggregate into the org dashboard.
+
+### Entry Mode 3: Direct Website Visit
+A person visits the assessment website directly (not from a QR code or invite link). They see the standard landing page with a "Start Your Assessment" CTA. Flow is:
+1. Enter email + basic info (or Google OAuth)
+2. Optionally enter company name to start an org
+3. Take assessment
+4. See personal results
+5. If they entered a company, they get an invite link to share with colleagues
+
+### Campaign Management
+
+Campaigns allow Voss AI to track where leads come from and customize the landing experience.
+
+**Campaign data model**:
+```
+campaign_code:    "techsummit2026"       — short, URL-safe, human-readable
+campaign_name:    "Tech Summit 2026"     — display name on landing page
+event_name:       "Tech Summit Austin"   — optional event branding
+event_date:       "2026-03-15"           — optional, for analytics
+organization_id:  null or UUID           — pre-link to an org (for private events)
+custom_branding:  { logo_url, color }    — optional visual customization
+is_active:        true                   — can be deactivated after event
+created_at:       timestamp
+```
+
+Every assessment taken via a campaign URL is tagged with the `campaign_code` in the assessment record. This flows through to HubSpot as a custom property (`campaign_source`) so Voss AI can track ROI per event.
+
+### QR Code Generation
+The system should include a simple admin utility (or API endpoint) that:
+1. Takes a campaign code
+2. Returns a QR code image (PNG or SVG) that encodes the campaign URL
+3. Optionally overlays the Voss AI logo in the center of the QR code
+4. Provides download links at multiple sizes (for print: 300dpi, for screen: 72dpi)
+
+Use a library like `qrcode` (npm package) for generation. This is a backend utility, not user-facing.
+
+### Authentication Strategy
+
+**No traditional auth. No passwords.** The app uses a lightweight identity model:
+
+| Method | When Used | What It Gets You |
+|--------|-----------|-----------------|
+| **Google OAuth 2.0** | QR scan entry, direct visit | Email, first name, last name, profile picture — all in one tap |
+| **Email entry** | Fallback for non-Google users | Email + first name (manually entered) |
+| **Magic link** (optional, future) | Returning users who want to see old results | Email → link sent → click → session restored |
+
+**Session management**:
+- On successful identification (OAuth or email entry), the server creates a session
+- Session token stored as an httpOnly cookie (or in Redis-backed session)
+- Session expires after 24 hours
+- The session carries: `userId`, `organizationId` (if any), `campaignCode` (if any), `isOrgAdmin`
+- No JWT needed — server-side sessions with Redis are simpler and more secure for this use case
+
+**Google OAuth implementation**:
+- Use `passport.js` with `passport-google-oauth20` strategy
+- Scopes: `email profile` (minimal)
+- Callback URL: `/auth/google/callback`
+- On callback: look up user by email in Supabase. If exists, start session. If new, create user, start session.
+- Redirect to: profile completion page (if missing job title/role) or directly to assessment
+
+**Email entry implementation**:
+- Simple form: email + first name
+- On submit: look up user by email. If exists, start session. If new, create user, start session.
+- No verification email needed (this is a lightweight assessment, not a banking app)
+- Duplicate prevention: if someone enters an email that already has a completed assessment, show them: "Welcome back! You completed this assessment on [date]. Want to retake it or view your previous results?"
+
+---
+
+## 4. User Flow (Step by Step)
 
 ### Flow A: Organization Admin (First Person)
 
@@ -150,9 +285,83 @@ This assessment is operated by Voss AI Consulting. Completed assessments generat
    → Does see "Your team's combined results will be shared with [Admin Name]"
 ```
 
+### Flow C: QR Code at Conference
+
+```
+1. Scans QR code → opens /e/{campaignCode} on phone
+
+2. Campaign landing page (mobile-first, < 2 second load):
+   → Event branding + Voss AI logo
+   → "Discover your AI readiness in 5 minutes"
+   → "Continue with Google" button (prominent, primary)
+   → "Use Email Instead" link (secondary)
+   → Consent checkbox
+
+3a. Google OAuth path:
+   → One-tap Google sign-in
+   → Auto-fills: email, first name, last name
+   → Redirect to quick profile page
+
+3b. Email path:
+   → Enter email + first name
+   → Submit → redirect to quick profile page
+
+4. Quick profile (single screen, no scroll on mobile):
+   → Job title (text input)
+   → Role level (3 large tap buttons: Executive / Manager / IC)
+   → Industry (dropdown)
+   → Company name (optional, with prompt: "Add your company to unlock team insights")
+   → Company size (optional dropdown, only appears if company entered)
+   → "Start Assessment →" button
+
+5. Assessment (mobile-optimized):
+   → ONE question per screen (not all questions in a section)
+   → Large Likert buttons (full-width, thumb-friendly)
+   → Swipe-forward gesture support
+   → Section header shows on first question of each section only
+   → Open-ended text questions: full-screen textarea with "Skip" option visible
+   → Progress: thin bar at top + "12 of 32" counter
+   → Auto-save every answer (POST per answer, debounced 500ms)
+
+6. Results (personal tier):
+   → Overall score with animation
+   → Radar chart (touch-interactive)
+   → Top strength + biggest gap highlighted
+   → "What this means for you" — 2-3 personalized sentences
+   → CTA cards:
+     a) "Share with your team" → generates/shows invite link
+     b) "Book a free consultation" → Calendly link
+     c) "Download your results" → PDF or email summary
+   → "Your results have been saved. Access them anytime at [link]."
+
+7. Post-assessment (automatic, no user action needed):
+   → HubSpot contact + deal created
+   → Assessment tagged with campaign_code
+   → If company was entered and no org exists → auto-create org, user becomes admin
+   → If company matches existing org → link user to that org
+```
+
+### Flow D: Direct Website Visit (No QR, No Invite)
+
+```
+1. Visits homepage directly
+   → Marketing content about AI readiness
+   → "Take the Assessment" CTA
+
+2. Sign-in options:
+   → Google OAuth or email entry (same as Flow C)
+
+3. Profile form:
+   → Same fields as Flow C, but company name is more prominently asked
+   → If company entered: "Would you like to assess your whole team?" checkbox
+     → If yes: creates org, user becomes admin, gets invite link after results
+
+4. Assessment → Results → same as other flows
+```
+
 ---
 
-## 4. Complete Question Bank
+## 5. Complete Question Bank
 
 The assessment has **6 sections** with **32 questions total** (26 scored Likert + 6 open-ended text). Every Likert question uses this 5-point scale:
 
@@ -277,7 +486,7 @@ Questions with `type: "multiple"` (ops_priority_areas, data_challenges) are **in
 
 ---
 
-## 5. Scoring Engine
+## 6. Scoring Engine
 
 ### Individual Section Score
 For each section, calculate the score using only Likert-type questions:
@@ -327,9 +536,19 @@ Additionally, calculate:
 
 ---
 
-## 6. Results & Insights Logic
+## 7. Three-Tier Results & Insights
 
-### Individual Results Page
+Results are delivered at three levels, each mapping to a Voss AI service offering. Every person who completes the assessment sees their **Personal** tier immediately. **Team** and **Corporate** tiers unlock as more people from the same organization complete the assessment.
+
+### Tier 1: Personal Results (shown to every individual immediately)
+
+**What the user sees after completing the assessment:**
+
+#### Score Display
+- Overall score (0-100) with animated counter
+- Radar chart showing all 6 dimensions (Chart.js)
+- Readiness level badge: Beginning / Developing / Intermediate / Advanced
+- Each section score displayed with a progress bar
 
 #### Insights Generation Rules
 Insights are generated dynamically based on scores. Apply these rules **in order**:
@@ -341,7 +560,7 @@ Insights are generated dynamically based on scores. Apply these rules **in order
 2. **Critical weakness** — Find sections scoring < 25, pick the lowest:
    - Title: `"{Section} Requires Immediate Attention"`
    - Description: `"Your {section} score of {score}% indicates a critical gap that needs strengthening before successful AI implementation."`
-   - Include CTA link to consultation: `https://calendly.com/robvoss-vossaiconsulting/30min`
+   - Include CTA link to consultation
 
 3. **Regular weakness** (if no critical weakness) — Find sections scoring < 50, pick the lowest:
    - Title: `"{Section} Needs Strengthening"`
@@ -354,40 +573,116 @@ Insights are generated dynamically based on scores. Apply these rules **in order
    - 25-49: "Foundational Development Needed" (include consultation CTA)
    - < 25: "Starting Your AI Journey" (include consultation CTA)
 
-#### Action Plan Generation Rules
+#### Personal Action Plan
 Generate action items based on section scores. For each section scoring < 70:
 
-**Strategy < 70**:
-- Immediate (0-30 days): "Define a clear AI strategy tied to specific business objectives"
-- Short-term (30-90 days): "Establish an AI governance framework covering ethics, risk, and responsible use"
+| Section < 70 | Immediate (0-30 days) | Short-term (30-90 days) | Long-term (90+ days) |
+|---|---|---|---|
+| Strategy | Define a clear AI strategy tied to specific business objectives | Establish an AI governance framework covering ethics, risk, and responsible use | — |
+| Data | Audit data quality and accessibility for AI readiness | Implement data governance policies addressing AI-specific concerns | — |
+| Technology | — | Evaluate and adopt cloud-based AI platforms and LLM providers | Build secure AI integration architecture with proper access controls |
+| Culture | Launch AI literacy training for employees at all levels | Create cross-functional AI champions program to drive adoption | — |
+| Operations | — | Document and map key processes to identify AI integration points | — |
+| Automation | Identify high-value tasks for AI augmentation | Pilot AI automation tools (AI assistants, coding copilots, agent workflows) | — |
 
-**Data < 70**:
-- Immediate: "Audit data quality and accessibility for AI readiness (RAG, analytics, fine-tuning)"
-- Short-term: "Implement data governance policies addressing AI-specific concerns (IP, training data rights)"
+If all sections >= 70: show "next level" actions about scaling, AI centers of excellence, and custom model development.
 
-**Technology < 70**:
-- Short-term: "Evaluate and adopt cloud-based AI platforms and LLM providers"
-- Long-term: "Build secure AI integration architecture with proper access controls and audit trails"
+#### Personal Tier CTA (Voss AI Service)
+> **"Want to accelerate your AI journey?"**
+> Book a free 30-minute consultation to get personalized guidance on your top improvement areas.
+> [Schedule Now] → Calendly link
 
-**Culture < 70**:
-- Immediate: "Launch AI literacy training for employees at all levels"
-- Short-term: "Create cross-functional AI champions program to drive adoption"
-
-**Automation < 70**:
-- Immediate: "Identify high-value tasks for AI augmentation (summarization, content generation, analysis)"
-- Short-term: "Pilot AI automation tools such as AI assistants, coding copilots, or agent workflows"
-
-**If all sections >= 70** (defaults):
-- Immediate: "Identify next wave of AI use cases across departments" + "Formalize AI governance and responsible use policies"
-- Short-term: "Scale successful AI implementations with clear ROI metrics" + "Explore AI agent workflows for complex multi-step processes"
-- Long-term: "Build an AI center of excellence to accelerate enterprise-wide adoption" + "Develop custom AI solutions and fine-tuned models for competitive advantage"
-
-### Radar Chart
-Display a radar/spider chart with 6 axes: Strategy, Operations, Technology, Data, Culture, Automation. Scale 0-100. Use Chart.js (already a dependency).
+**Service mapping**: Individual AI coaching, prompt engineering training, personal AI tool recommendations.
 
 ---
 
-## 7. Organization Dashboard (NEW)
+### Tier 2: Team Results (unlocks when 2+ people from the same org complete)
+
+**What team members see** (on a "Team Insights" tab on their results page, or via the invite link dashboard):
+
+#### Unlock Messaging
+- If the user is the only person from their org: show a locked card: "Team insights unlock when 2 or more people from your organization complete the assessment. Share this link with your colleagues: [invite link]"
+- If 2+ people have completed: show the team insights below
+
+#### Team Score Comparison
+- Side-by-side radar chart: "Your scores" vs "Team average"
+- Highlight where the individual diverges most from the team average (both above and below)
+- Show how many team members have completed: "Based on {n} responses from your team"
+
+#### Alignment Analysis
+For each section, show:
+- Team average score
+- Score range (min – max)
+- Whether this person is above or below the team average
+- **Alignment indicator**: If the spread (max - min) is > 20 points, flag it: "Your team has divergent views on {section}. This is worth discussing."
+
+#### Team Insights
+Dynamic text based on team patterns:
+- **High alignment + high scores** (spread < 10, avg > 70): "Your team is aligned and strong in {section}. Build on this foundation."
+- **High alignment + low scores** (spread < 10, avg < 50): "Your team agrees that {section} needs work. This shared awareness is an advantage — you can tackle it together."
+- **Low alignment** (spread > 20): "There's a significant perception gap in {section} between team members. The {highest_role} sees it at {score}% while the {lowest_role} rates it at {score}%. A team workshop could help align perspectives."
+
+#### Team Tier CTA (Voss AI Service)
+> **"Align your team's AI readiness"**
+> A facilitated team workshop helps close perception gaps and build a shared AI roadmap.
+> [Learn About Team Workshops] or [Book a Consultation]
+
+**Service mapping**: Team AI workshops, department-level AI strategy sessions, facilitated alignment exercises.
+
+---
+
+### Tier 3: Corporate Results (org admin dashboard — the full picture)
+
+**Who sees this**: The org admin only (the person who created the organization or was designated admin). Voss AI also has access to this data for sales/consulting purposes (via HubSpot and Supabase).
+
+This is the full Organization Dashboard described in the next section. The key additions for the corporate tier:
+
+#### Strategic Assessment Summary
+Auto-generated executive summary text:
+
+```
+"{Org Name} has an overall AI readiness score of {score}%, placing it at the
+{Intermediate} level. Based on {n} responses across {role_count} role levels:
+
+Strengths:
+• {Highest section} ({score}%) — consistently rated strong across all roles
+• {Second highest, if > 70} ...
+
+Critical Gaps:
+• {Lowest section} ({score}%) — particularly acute among {role_level} ({their_avg}%)
+• {Section with highest divergence} shows a {spread}-point spread between
+  {role_level} ({score}%) and {role_level} ({score}%), indicating misaligned perceptions
+
+Recommended Engagement: {engagement_type}"
+```
+
+#### Corporate Engagement Recommendations
+Based on scores + org size + gaps:
+
+| Scenario | Recommendation | Voss AI Service |
+|----------|---------------|-----------------|
+| Overall < 40 | "Foundational AI readiness program recommended. Start with leadership alignment and AI literacy." | Corporate AI Transformation Program |
+| Overall 40-69, large gaps | "Targeted workshops for high-gap areas, plus leadership coaching to align vision." | Department Workshops + Executive Coaching |
+| Overall 40-69, aligned | "Your team is aligned but needs capability building. Focused training programs recommended." | AI Skills Bootcamp + Implementation Support |
+| Overall >= 70, gaps exist | "Strong foundation. Close remaining gaps with specialized consulting." | Specialized AI Consulting (Data, Tech, etc.) |
+| Overall >= 70, aligned | "Ready for advanced AI implementation. Move to pilot projects and scaling." | AI Implementation Partner + Ongoing Advisory |
+
+#### Corporate Tier CTA (Voss AI Service)
+> **"Ready to transform your organization's AI capabilities?"**
+> Get a custom AI roadmap based on your team's assessment data.
+> [Request a Corporate Proposal] or [Schedule an Executive Briefing]
+
+**Service mapping**: Full corporate engagements — AI transformation programs, multi-department rollouts, ongoing advisory relationships, custom AI strategy development.
+
+### Radar Chart (All Tiers)
+Display a radar/spider chart with 6 axes: Strategy, Operations, Technology, Data, Culture, Automation. Scale 0-100. Use Chart.js.
+- **Personal**: Single dataset (the individual's scores)
+- **Team**: Two overlaid datasets (individual + team average, different colors)
+- **Corporate**: Multiple overlaid datasets (overall average + per-role averages)
+
+---
+
+## 8. Organization Dashboard (NEW)
 
 This is the major new feature. Accessible only to the org admin.
 
@@ -434,7 +729,7 @@ Aggregate all open-ended responses by section. Display them anonymously (or attr
 
 ---
 
-## 8. Data Model & Schema
+## 9. Data Model & Schema
 
 ### Tables
 
@@ -453,6 +748,24 @@ CREATE TABLE organizations (
 CREATE INDEX idx_organizations_invite_code ON organizations(invite_code);
 ```
 
+#### `campaigns` (NEW — for QR code / event tracking)
+```sql
+CREATE TABLE campaigns (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,                    -- URL-safe short code: "techsummit2026"
+    name VARCHAR(255) NOT NULL,                          -- "Tech Summit 2026"
+    event_name VARCHAR(255),                             -- optional event branding
+    event_date DATE,                                     -- optional, for analytics
+    organization_id UUID REFERENCES organizations(id),   -- optional pre-link to org
+    custom_branding JSONB DEFAULT '{}'::jsonb,           -- { logo_url, primary_color, tagline }
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID REFERENCES users(id),                -- Voss AI admin who created it
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX idx_campaigns_code ON campaigns(code);
+CREATE INDEX idx_campaigns_is_active ON campaigns(is_active);
+```
+
 #### `users`
 ```sql
 CREATE TABLE users (
@@ -461,14 +774,18 @@ CREATE TABLE users (
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     job_title VARCHAR(255),
-    role_level VARCHAR(50),  -- 'Executive', 'Manager', 'Individual Contributor'
+    role_level VARCHAR(50),                              -- 'Executive', 'Manager', 'Individual Contributor'
     phone VARCHAR(50),
-    organization_id UUID REFERENCES organizations(id),  -- NEW: links user to org
-    is_org_admin BOOLEAN DEFAULT false,                  -- NEW: admin flag
+    profile_picture_url TEXT,                             -- from Google OAuth
+    auth_provider VARCHAR(50) DEFAULT 'email',           -- 'google' or 'email'
+    google_id VARCHAR(255),                              -- Google OAuth sub claim
+    organization_id UUID REFERENCES organizations(id),
+    is_org_admin BOOLEAN DEFAULT false,
     consent_marketing BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+CREATE INDEX idx_users_google_id ON users(google_id);
 ```
 
 #### `assessments`
@@ -476,18 +793,21 @@ CREATE TABLE users (
 CREATE TABLE assessments (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID REFERENCES users(id),
-    organization_id UUID REFERENCES organizations(id),   -- NEW: direct org link
+    organization_id UUID REFERENCES organizations(id),
+    campaign_id UUID REFERENCES campaigns(id),           -- NEW: tracks entry source
     session_id VARCHAR(255),
     status VARCHAR(50) DEFAULT 'in_progress',            -- 'in_progress', 'completed', 'abandoned'
     answers JSONB DEFAULT '{}'::jsonb,                    -- { question_id: answer_value }
     score DECIMAL(5,2),                                  -- overall score
     section_scores JSONB,                                -- { strategy: 75, operations: 68, ... }
+    entry_mode VARCHAR(50),                              -- 'qr_scan', 'invite_link', 'direct', 'website'
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX idx_assessments_user_id ON assessments(user_id);
 CREATE INDEX idx_assessments_organization_id ON assessments(organization_id);
+CREATE INDEX idx_assessments_campaign_id ON assessments(campaign_id);
 CREATE INDEX idx_assessments_status ON assessments(status);
 ```
 
@@ -530,12 +850,14 @@ CREATE TABLE benchmarks (
 organizations 1 ──── * users
 organizations 1 ──── * assessments
 users         1 ──── * assessments
+campaigns     1 ──── * assessments
+campaigns     * ──── 1 organizations (optional)
 organizations.admin_user_id ──── 1 users
 ```
 
 ---
 
-## 9. API Endpoints
+## 10. API Endpoints
 
 ### Organization Endpoints (NEW)
 
@@ -617,10 +939,114 @@ Get the organization dashboard data. **Requires authentication as org admin.**
 }
 ```
 
+### Authentication Endpoints (NEW)
+
+#### `GET /auth/google`
+Initiates Google OAuth 2.0 flow. Accepts optional query params to preserve context:
+- `?campaign={campaignCode}` — remember which campaign they came from
+- `?org={inviteCode}` — remember which org invite they followed
+- These are stored in the session before redirect to Google
+
+#### `GET /auth/google/callback`
+Google OAuth callback. On success:
+1. Look up user by Google email in Supabase
+2. If exists: update `google_id` and `profile_picture_url` if not already set, start session
+3. If new: create user with Google profile data, start session
+4. Redirect to profile completion page (if missing `job_title` or `role_level`) or to `/assessment`
+5. Restore campaign/org context from session
+
+#### `POST /auth/email`
+Email-based identification (no password).
+
+**Request body**:
+```json
+{
+    "email": "john@acme.com",
+    "firstName": "John",
+    "campaignCode": "techsummit2026",
+    "inviteCode": "abc123"
+}
+```
+
+**Response**:
+```json
+{
+    "success": true,
+    "isReturning": false,
+    "needsProfile": true,
+    "sessionId": "..."
+}
+```
+
+If `isReturning: true` and user already has a completed assessment, also return:
+```json
+{
+    "previousAssessment": {
+        "completedAt": "2026-02-10T...",
+        "overallScore": 68
+    }
+}
+```
+Client can then show "Welcome back!" dialog with options to retake or view previous results.
+
+### Campaign Endpoints (NEW)
+
+#### `POST /api/campaigns`
+Create a new campaign. **Admin only** (Voss AI internal).
+
+**Request body**:
+```json
+{
+    "code": "techsummit2026",
+    "name": "Tech Summit 2026",
+    "eventName": "Tech Summit Austin",
+    "eventDate": "2026-03-15",
+    "organizationId": null,
+    "customBranding": { "tagline": "Discover Your AI Potential" }
+}
+```
+
+#### `GET /api/campaigns/:code`
+Get campaign info for the landing page. Public endpoint.
+
+**Response**:
+```json
+{
+    "name": "Tech Summit 2026",
+    "eventName": "Tech Summit Austin",
+    "isActive": true,
+    "branding": { "tagline": "Discover Your AI Potential" },
+    "organizationName": null
+}
+```
+
+#### `GET /api/campaigns/:code/qr`
+Generate and return a QR code image for the campaign URL.
+
+**Query params**: `?size=300` (pixels), `?format=png|svg`
+
+**Response**: Image binary (PNG or SVG) with appropriate content-type header.
+
+#### `GET /api/campaigns/:code/stats`
+Campaign analytics. **Admin only**.
+
+**Response**:
+```json
+{
+    "totalScans": 245,
+    "totalCompletions": 89,
+    "completionRate": 0.363,
+    "averageScore": 62,
+    "topIndustries": [{ "industry": "Technology", "count": 34 }, ...],
+    "dailyCounts": [{ "date": "2026-03-15", "scans": 120, "completions": 45 }, ...]
+}
+```
+
 ### User Endpoints
 
 #### `POST /api/users`
 Register a user (either as org admin during org creation, or as invited team member).
+Also used for profile completion after OAuth (adding job_title, role_level, etc.)
 
 **Request body**:
 ```json
@@ -631,9 +1057,19 @@ Register a user (either as org admin during org creation, or as invited team mem
     "jobTitle": "Data Analyst",
     "roleLevel": "Individual Contributor",
     "organizationInviteCode": "abc123",
+    "campaignCode": "techsummit2026",
+    "company": "Acme Corp",
+    "companySize": "51-200",
     "consentMarketing": true
 }
 ```
+
+**Smart org handling on profile completion**:
+- If `company` is provided and `organizationInviteCode` is null:
+  - Check if an org with that company name already exists
+  - If yes: link user to existing org
+  - If no: auto-create org, make user the admin
+- If `organizationInviteCode` is provided: link user to that org (don't make them admin)
 
 ### Assessment Endpoints
 
@@ -691,7 +1127,7 @@ Health check endpoint showing status of Redis, Supabase, HubSpot connections.
 
 ---
 
-## 10. Integrations
+## 11. Integrations
 
 ### Supabase (Database)
 - **Purpose**: Persistent storage for all data
@@ -732,6 +1168,8 @@ Custom properties (must be created in HubSpot first):
 - `ai_culture_score` (string)
 - `ai_automation_score` (string)
 - `lead_source` (string) — always "AI Readiness Assessment"
+- `campaign_source` (string) — campaign code if entered via QR/campaign link, empty otherwise
+- `entry_mode` (string) — "qr_scan", "invite_link", "direct", or "website"
 
 #### HubSpot Deal Creation
 Created for **every** completed assessment:
@@ -773,7 +1211,75 @@ Attached to the contact after assessment completion. Contains:
 
 ---
 
-## 11. Frontend Architecture
+## 12. Progressive Web App (PWA)
+
+The assessment must work as a PWA for the conference QR code use case. When someone scans a QR code on their phone, it opens in the browser — but it should feel like a native app.
+
+### PWA Requirements
+
+#### Service Worker
+- Cache the app shell (HTML, CSS, JS, fonts) on first load for instant subsequent loads
+- Cache assessment questions after first API fetch (so the assessment works even with spotty conference wifi)
+- Background sync: if an answer save fails (no connectivity), queue it and retry when connection returns
+- Strategy: **Network First** for API calls (try network, fall back to cache), **Cache First** for static assets
+
+#### Web App Manifest (`manifest.json`)
+```json
+{
+    "name": "AI Readiness Assessment",
+    "short_name": "AI Assessment",
+    "description": "Evaluate your AI readiness in 5 minutes",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2563eb",
+    "orientation": "portrait",
+    "icons": [
+        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+        { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}
+```
+
+#### Mobile-First Assessment UX
+The assessment must be optimized for thumb-driven mobile interaction:
+
+**One question per screen** (on viewports < 768px):
+- Question text at top
+- Likert buttons as 5 large, full-width stacked buttons (not a tiny horizontal row)
+- Each button: min height 48px, clear label, tap feedback (color change + subtle haptic if supported)
+- "Next" button anchored to bottom of viewport
+- Swipe-right gesture also advances to next question
+- Progress bar always visible at top (thin, non-intrusive)
+
+**Section view** (on viewports >= 768px — tablet/desktop):
+- Show all questions in a section at once (current behavior)
+- Likert buttons as horizontal row (current behavior)
+
+**Text input questions** (open-ended):
+- Full-screen textarea on mobile
+- "Skip" link clearly visible (these are optional)
+- Character counter
+- Auto-grow textarea
+
+#### Offline Resilience
+At a conference, wifi is unreliable. The assessment should handle this gracefully:
+
+1. **Questions**: Cached after first fetch. If offline, serve from cache. If cache empty and offline, show "Please connect to wifi to start the assessment" with a retry button.
+2. **Answer saves**: Queue failed saves in IndexedDB. Retry automatically when connection returns. Show a small "Saving..." → "Saved" indicator on each answer.
+3. **Completion**: If the final submit fails, save the complete assessment locally and show: "Your results have been saved on your device. They'll sync automatically when you're back online." Retry in background.
+4. **Results page**: If the server call to get computed scores fails, compute scores client-side as a fallback (the client has the answers and the scoring formula). Show a note: "Scores calculated locally. Full insights will appear when connection is restored."
+
+#### Install Prompt
+After the user completes the assessment, show a subtle prompt:
+> "Add to Home Screen for quick access to your results and team dashboard"
+
+Don't show this before completion — the user hasn't gotten value yet.
+
+---
+
+## 13. Frontend Architecture
 
 ### Current Problems to Fix
 1. **No bundler** — 11 separate JS files loaded as script tags. Use Vite or esbuild.
@@ -788,12 +1294,13 @@ Attached to the contact after assessment completion. Contains:
 
 | Page | Route | Purpose |
 |------|-------|---------|
-| Landing | `/` | Marketing page, "Start Assessment" CTA |
-| Org Setup | `/start` | Create organization + admin info form |
-| Invite Landing | `/org/:inviteCode` | Shows org name, collects team member info |
-| Assessment | `/assessment` | 6-section assessment flow |
-| Results | `/results` | Individual results display |
-| Org Dashboard | `/dashboard/:inviteCode` | Admin-only org dashboard |
+| Landing | `/` | Marketing page, "Start Assessment" CTA, Google OAuth + email entry |
+| Campaign Landing | `/e/:campaignCode` | QR code destination — event branding, fast sign-in (mobile-first) |
+| Org Invite Landing | `/org/:inviteCode` | Shows org name, collects team member info |
+| Profile Completion | `/profile` | Job title, role, industry, company (after OAuth or email entry) |
+| Assessment | `/assessment` | 6-section assessment flow (one-question-per-screen on mobile) |
+| Results | `/results` | Individual results — personal tier, team tier (if unlocked), CTAs |
+| Org Dashboard | `/dashboard/:inviteCode` | Admin-only corporate tier dashboard |
 | Privacy Policy | `/privacy` | Static legal page |
 | Terms of Service | `/terms` | Static legal page |
 
@@ -812,7 +1319,7 @@ Mobile-first responsive design. The existing design system uses:
 
 ---
 
-## 12. Configuration & Environment
+## 14. Configuration & Environment
 
 ### All Environment Variables
 
@@ -827,6 +1334,12 @@ REDIS_URL=redis://localhost:6379          # or REDIS_HOST + REDIS_PORT + REDIS_P
 NODE_ENV=production                        # or development
 PORT=3001
 FRONTEND_URL=https://your-domain.com      # for CORS
+APP_URL=https://assess.vossai.com         # base URL for generated invite/campaign links + QR codes
+
+# === RECOMMENDED — Google OAuth ===
+GOOGLE_CLIENT_ID=your-google-client-id         # from Google Cloud Console
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=https://your-domain.com/auth/google/callback
 
 # === OPTIONAL — HubSpot CRM ===
 HUBSPOT_ACCESS_TOKEN=your-token            # omit to disable CRM integration entirely
@@ -875,6 +1388,12 @@ module.exports = Object.freeze({
         port: Number(process.env.REDIS_PORT) || 6379,
         password: process.env.REDIS_PASSWORD || null
     },
+    google: {
+        clientId: process.env.GOOGLE_CLIENT_ID || null,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || null,
+        callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/auth/google/callback'
+    },
+    appUrl: process.env.APP_URL || 'http://localhost:3001',  // for QR codes + invite links
     hubspot: {
         accessToken: process.env.HUBSPOT_ACCESS_TOKEN || null,
         pipelineId: process.env.HUBSPOT_PIPELINE_ID || 'default',
@@ -906,7 +1425,7 @@ module.exports = Object.freeze({
 
 ---
 
-## 13. Deployment
+## 15. Deployment
 
 ### Docker (Recommended)
 The app should be deployable with a single `docker compose up`.
@@ -970,7 +1489,7 @@ For Netlify/Vercel frontend with API backend on Railway/DigitalOcean:
 
 ---
 
-## 14. Current Problems to Fix
+## 16. Current Problems to Fix
 
 These are specific bugs and debt in the existing codebase. Fix all of them in the rebuild.
 
@@ -1027,7 +1546,7 @@ Zero test coverage. **Fix**: Add at minimum:
 
 ---
 
-## 15. Tech Stack Decisions
+## 17. Tech Stack Decisions
 
 ### Keep
 - **Node.js + Express** — Backend
@@ -1038,9 +1557,12 @@ Zero test coverage. **Fix**: Add at minimum:
 - **HubSpot API client** — CRM integration
 
 ### Add
-- **Vite** — Frontend bundler (fast, simple config, replaces the need for 11 separate script tags)
+- **Vite** — Frontend bundler (fast, simple config, replaces the need for 11 separate script tags) with PWA plugin (`vite-plugin-pwa`)
 - **A test framework** — Vitest (pairs well with Vite) or Jest
-- **nanoid** — For generating invite codes (short, URL-safe, unique)
+- **nanoid** — For generating invite codes and campaign codes (short, URL-safe, unique)
+- **passport.js** + **passport-google-oauth20** — Google OAuth 2.0 authentication
+- **qrcode** (npm) — QR code generation for campaign URLs
+- **workbox** — Service worker tooling for PWA (auto-generated via vite-plugin-pwa)
 
 ### Remove
 - Google Sheets integration (dead code — `sendToGoogleSheets` is just a duplicate of the primary API call)
@@ -1054,7 +1576,7 @@ Zero test coverage. **Fix**: Add at minimum:
 ```
 /
 ├── server.js                    # Express app setup + start
-├── config.js                    # All env vars + defaults
+├── config.js                    # All env vars + defaults + startup validation
 ├── package.json
 ├── Dockerfile
 ├── docker-compose.yml
@@ -1062,39 +1584,49 @@ Zero test coverage. **Fix**: Add at minimum:
 ├── data/
 │   └── questions.json           # Single source of truth for questions
 ├── routes/
-│   ├── assessment.js
-│   ├── organizations.js
-│   ├── users.js
-│   └── analytics.js
+│   ├── assessment.js            # Assessment CRUD + completion
+│   ├── auth.js                  # Google OAuth + email entry + sessions
+│   ├── campaigns.js             # Campaign CRUD + QR generation
+│   ├── organizations.js         # Org management + dashboard data
+│   ├── users.js                 # User registration + profile completion
+│   └── analytics.js             # Stats + reporting
 ├── utils/
-│   ├── scoring.js               # Score calculation
-│   ├── insights.js              # Insight + action plan generation
+│   ├── scoring.js               # Score calculation (single source of truth)
+│   ├── insights.js              # Insight + action plan generation (all 3 tiers)
+│   ├── qr.js                    # QR code generation utility
 │   ├── supabase.js
 │   ├── redis.js
 │   └── hubspot.js
 ├── middleware/
-│   ├── auth.js                  # Org admin authentication
-│   └── validation.js            # Input validation
+│   ├── auth.js                  # Session validation + org admin check
+│   └── validation.js            # Input validation + sanitization
 ├── database/
-│   └── schema.sql               # Full schema with organizations table
-├── client/                      # Frontend (built with Vite)
-│   ├── index.html               # Landing
-│   ├── start.html               # Org setup
-│   ├── invite.html              # Team member landing
+│   └── schema.sql               # Full schema with orgs, campaigns, users, assessments
+├── client/                      # Frontend (built with Vite + PWA plugin)
+│   ├── index.html               # Landing page
+│   ├── campaign.html            # QR code / event landing page (mobile-first)
+│   ├── invite.html              # Org invite landing page
+│   ├── profile.html             # Profile completion (post-auth)
 │   ├── assessment.html          # Assessment flow
-│   ├── results.html             # Individual results
-│   ├── dashboard.html           # Org dashboard
+│   ├── results.html             # Individual results (personal + team tiers)
+│   ├── dashboard.html           # Org admin dashboard (corporate tier)
+│   ├── manifest.json            # PWA manifest
+│   ├── sw.js                    # Service worker (or auto-generated by vite-plugin-pwa)
+│   ├── icons/                   # PWA icons (192, 512, maskable)
 │   ├── scripts/
-│   │   ├── main.js              # Shared config + utilities
-│   │   ├── assessment.js        # Assessment logic
-│   │   ├── results.js           # Results display
-│   │   ├── dashboard.js         # Org dashboard
-│   │   └── api.js               # API client (single fetch wrapper)
+│   │   ├── main.js              # Shared config, utilities, safeLocalStorage
+│   │   ├── api.js               # API client (single fetch wrapper with retry)
+│   │   ├── auth.js              # OAuth redirect + email form handling
+│   │   ├── assessment.js        # Assessment logic (mobile + desktop modes)
+│   │   ├── results.js           # Results display (personal + team tiers)
+│   │   ├── dashboard.js         # Org dashboard (corporate tier)
+│   │   └── offline.js           # IndexedDB queue for offline answer saves
 │   └── styles/
-│       └── main.css             # Tailwind + custom styles
+│       └── main.css             # Tailwind + custom styles + mobile-first
 └── tests/
     ├── scoring.test.js
     ├── api.test.js
+    ├── campaigns.test.js
     └── organizations.test.js
 ```
 
@@ -1102,12 +1634,36 @@ Zero test coverage. **Fix**: Add at minimum:
 
 ## Summary for the Builder
 
+Build priority, in this order:
+
+### Phase 1: Core Assessment (get it working)
 1. **Read `data/questions.json`** as the single source of truth for all questions, weights, and options
 2. **Score calculation lives on the server only** — client sends raw answers, server returns scores
-3. **Organizations are the new core concept** — every assessment belongs to an org, every user belongs to an org
-4. **The invite link flow is critical** — admin creates org → gets link → shares with team → team members arrive at pre-filled landing
-5. **The org dashboard is the key new feature** — aggregate scores, role-based breakdowns, alignment analysis
-6. **HubSpot integration fires on every completion** — contact + deal + note, qualified/unqualified based on score threshold
-7. **Config is centralized** — one `config.js`, one `.env`, all thresholds and business rules configurable without code changes
-8. **Deploy with `docker compose up`** — that's the target simplicity
-9. **Fix all P1-P9 problems** — no duplicate endpoints, no client-side scoring, no hardcoded URLs, no repeated utility functions
+3. **Email entry flow** — someone enters email + name, takes assessment, sees personal results
+4. **Mobile-first assessment UX** — one question per screen on mobile, large touch targets
+5. **Supabase persistence** — users, assessments, scores
+6. **Config is centralized** — one `config.js`, one `.env`, all thresholds and business rules configurable
+7. **Deploy with `docker compose up`** — that's the target simplicity
+8. **Fix all P1-P9 problems** — no duplicate endpoints, no client-side scoring, no hardcoded URLs
+
+### Phase 2: Organization & Team Features
+9. **Organizations** — every assessment can belong to an org, every user can belong to an org
+10. **Invite link flow** — admin creates org → gets link → shares with team → team members arrive
+11. **Team tier results** — "Your scores vs team average" comparison, alignment analysis
+12. **Org dashboard (corporate tier)** — aggregate scores, role-based breakdowns, strategic recommendations
+13. **HubSpot integration** — contact + deal + note on every completion, campaign_source tracking
+
+### Phase 3: Conference & QR Code Mode
+14. **Campaign management** — create campaigns with codes, generate QR codes
+15. **Google OAuth** — one-tap sign-in for frictionless conference entry
+16. **Campaign landing pages** — event-branded, mobile-optimized, < 2 second load
+17. **PWA** — service worker, offline resilience, installable, background sync
+18. **Campaign analytics** — scans, completions, conversion rates per event
+
+### Key Principles
+- **No passwords, no accounts** — identity by email, sessions expire in 24 hours
+- **Three tiers of value** — Personal (every individual), Team (2+ from same org), Corporate (admin dashboard)
+- **Each tier maps to a Voss AI service** — personal coaching, team workshops, corporate transformation
+- **Mobile-first** — the primary entry point is a phone scanning a QR code at a conference
+- **Offline-resilient** — conference wifi is unreliable, the assessment must handle disconnection gracefully
+- **Every completion is a lead** — HubSpot contact + deal created automatically, tagged with campaign source
