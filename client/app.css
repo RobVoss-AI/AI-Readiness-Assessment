@@ -1,0 +1,174 @@
+/* app.css — Mobile-first assessment styles */
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-tap-highlight-color: transparent; }
+body { -webkit-font-smoothing: antialiased; }
+
+/* ------------------------------------------------------------------ */
+/* Screen transitions                                                  */
+/* ------------------------------------------------------------------ */
+.screen-enter {
+  animation: screenIn 0.28s ease-out both;
+}
+.screen-exit {
+  animation: screenOut 0.18s ease-in both;
+}
+@keyframes screenIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes screenOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-40px); }
+}
+
+/* Going backward reverses the direction */
+.screen-enter-back {
+  animation: screenInBack 0.28s ease-out both;
+}
+@keyframes screenInBack {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Option cards (likert / multiple-choice)                             */
+/* ------------------------------------------------------------------ */
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.option-card:hover {
+  border-color: #93c5fd;
+  background-color: #f0f7ff;
+}
+.option-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45);
+}
+.option-card.selected {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+.option-card .radio {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+.option-card.selected .radio {
+  border-color: #2563eb;
+}
+.option-card.selected .radio::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+/* ------------------------------------------------------------------ */
+/* Score gauge                                                         */
+/* ------------------------------------------------------------------ */
+.gauge-ring {
+  transition: stroke-dashoffset 1.2s ease-out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Section score bars                                                  */
+/* ------------------------------------------------------------------ */
+.score-bar-fill {
+  transition: width 0.8s ease-out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                             */
+/* ------------------------------------------------------------------ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  box-shadow: 0 4px 14px rgba(30, 64, 175, 0.3);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: #374151;
+  background: #fff;
+  border: 2px solid #d1d5db;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.btn-secondary:hover {
+  border-color: #9ca3af;
+  background-color: #f9fafb;
+}
+
+/* ------------------------------------------------------------------ */
+/* Loading spinner                                                     */
+/* ------------------------------------------------------------------ */
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ------------------------------------------------------------------ */
+/* Responsive helpers                                                  */
+/* ------------------------------------------------------------------ */
+@media (min-width: 640px) {
+  .option-card { font-size: 1.0625rem; }
+}

@@ -1,13 +1,14 @@
-// server.js - Main backend server
+// server.js — Phase 1 backend: server-side scoring, Supabase persistence, graceful degradation
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const session = require('express-session');
-const ConnectRedisStore = require('connect-redis').default;
-const RateLimitRedisStore = require('rate-limit-redis').default;
+const path = require('path');
+const crypto = require('crypto');
+
+const config = require('./assessment-config');
 const redisClient = require('./utils/redis');
 const supabaseClient = require('./utils/supabase');
 const hubspotClient = require('./utils/hubspot');
@@ -15,780 +16,319 @@ const hubspotClient = require('./utils/hubspot');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize connections
-async function initializeConnections() {
-    console.log('🔄 Connecting to Redis...');
-    try {
-        await redisClient.connect();
-        if (redisClient.isConnected) {
-            console.log('✅ Redis connected successfully');
-        } else {
-            console.log('⚠️  Redis connection failed, continuing without Redis');
-        }
-    } catch (error) {
-        console.log('⚠️  Redis connection failed, continuing without Redis:', error.message);
-    }
+// ---------------------------------------------------------------------------
+// Initialise external services (all optional — app works without them)
+// ---------------------------------------------------------------------------
+async function initConnections() {
+  // Redis
+  try {
+    await redisClient.connect();
+    if (redisClient.isConnected) console.log('[redis] connected');
+  } catch (e) {
+    console.log('[redis] unavailable —', e.message);
+  }
 
-    console.log('🔄 Initializing Supabase...');
+  // Supabase
+  try {
     await supabaseClient.initialize();
+    if (supabaseClient.isConnected) console.log('[supabase] connected');
+  } catch (e) {
+    console.log('[supabase] unavailable —', e.message);
+  }
 
-    console.log('🔄 Initializing HubSpot...');
+  // HubSpot
+  try {
     hubspotClient.initialize();
-
-    return { redisClient, supabaseClient };
+    if (hubspotClient.isConnected) console.log('[hubspot] connected');
+  } catch (e) {
+    console.log('[hubspot] unavailable —', e.message);
+  }
 }
 
-// Setup middleware after Redis is connected
-async function setupMiddleware() {
-    // Basic middleware
-    app.use(helmet());
-    app.use(cors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        credentials: true
-    }));
-    app.use(express.json({ limit: '10mb' }));
+// ---------------------------------------------------------------------------
+// Middleware
+// ---------------------------------------------------------------------------
+function setupMiddleware() {
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.tailwindcss.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+        frameAncestors: ["'none'"]
+      }
+    }
+  }));
 
-    // content security policy directives
-    app.use(function (req, res, next) {
-        res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://script.google.com https://www.googletagmanager.com/gtag/; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com; frame-ancestors 'none';");
-        return next();
+  app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+  }));
+
+  app.use(express.json({ limit: '1mb' }));
+
+  // Rate limiting (memory-backed — Redis optional)
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  app.use('/api/', limiter);
+
+  // Serve the client SPA
+  app.use(express.static(path.join(__dirname, 'client')));
+}
+
+// ---------------------------------------------------------------------------
+// Input validation helpers
+// ---------------------------------------------------------------------------
+function sanitize(str, maxLen = 5000) {
+  if (typeof str !== 'string') return '';
+  return str.trim().slice(0, maxLen);
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
+function setupRoutes() {
+
+  // ---- Health check ---------------------------------------------------------
+  app.get('/health', (_req, res) => {
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      services: {
+        redis: redisClient.isConnected ? 'healthy' : 'unavailable',
+        supabase: supabaseClient.isConnected ? 'healthy' : 'unavailable',
+        hubspot: hubspotClient.isConnected ? 'healthy' : 'unavailable'
+      }
     });
+  });
 
-    app.use(express.static('client'));
+  // ---- Assessment config (no weights exposed) ------------------------------
+  app.get('/api/assessment/config', (_req, res) => {
+    res.json(config.getClientConfig());
+  });
 
-
-    // Session management with Redis (fallback to memory store)
-    const sessionConfig = {
-        secret: process.env.SESSION_SECRET || 'ai-scorecard-secret-key',
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production',
-            httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        }
-    };
-
-    if (redisClient.isConnected && redisClient.client) {
-        sessionConfig.store = new ConnectRedisStore({ client: redisClient.client });
-        console.log('📝 Using Redis for session storage');
-    } else {
-        console.log('📝 Using memory store for sessions (Redis unavailable)');
-    }
-
-    app.use(session(sessionConfig));
-
-    // Rate limiting with Redis fallback
-    const limiterConfig = {
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100, // limit each IP to 100 requests per windowMs
-        standardHeaders: true,
-        legacyHeaders: false,
-    };
-
-    if (redisClient.isConnected && redisClient.client) {
-        limiterConfig.store = new RateLimitRedisStore({
-            sendCommand: (...args) => redisClient.client.sendCommand(args),
-        });
-        console.log('🚦 Using Redis for rate limiting');
-    } else {
-        console.log('🚦 Using memory store for rate limiting (Redis unavailable)');
-    }
-
-    const limiter = rateLimit(limiterConfig);
-    app.use('/api/', limiter);
-
-    // Stricter rate limit for GPT endpoints
-    const gptLimiterConfig = {
-        windowMs: 60 * 60 * 1000, // 1 hour
-        max: 10, // limit each IP to 10 GPT requests per hour
-        standardHeaders: true,
-        legacyHeaders: false,
-    };
-
-    if (redisClient.isConnected && redisClient.client) {
-        gptLimiterConfig.store = new RateLimitRedisStore({
-            sendCommand: (...args) => redisClient.client.sendCommand(args),
-        });
-    }
-
-    const gptLimiter = rateLimit(gptLimiterConfig);
-
-    return gptLimiter;
-}
-
-// Helper function to generate key insights for HubSpot notes
-function generateKeyInsights(sectionScores, overallScore) {
-    const insights = [];
-
-    // Overall assessment
-    if (overallScore >= 80) {
-        insights.push('High AI readiness - excellent candidate for advanced AI implementation');
-    } else if (overallScore >= 60) {
-        insights.push('Moderate AI readiness - good foundation with areas for improvement');
-    } else {
-        insights.push('Early AI readiness stage - significant opportunity for consulting engagement');
-    }
-
-    // Section-specific insights
-    const sections = [
-        { key: 'strategy', name: 'AI Strategy', threshold: 70 },
-        { key: 'data', name: 'Data Infrastructure', threshold: 75 },
-        { key: 'technology', name: 'Technology', threshold: 65 },
-        { key: 'talent', name: 'AI Talent', threshold: 60 },
-        { key: 'culture', name: 'Culture', threshold: 70 },
-        { key: 'governance', name: 'Governance', threshold: 65 }
-    ];
-
-    sections.forEach(section => {
-        const score = sectionScores?.[section.key];
-        if (score !== undefined) {
-            if (score >= section.threshold) {
-                insights.push(`Strong ${section.name} foundation (${score}/100)`);
-            } else {
-                insights.push(`${section.name} needs development (${score}/100) - consulting opportunity`);
-            }
-        }
-    });
-
-    return insights;
-}
-
-// Start server with Redis initialization
-async function startServer() {
+  // ---- Start assessment (email capture) ------------------------------------
+  app.post('/api/assessment/start', async (req, res) => {
     try {
-        // Step 1: Initialize connections
-        await initializeConnections();
+      const email = sanitize(req.body.email, 255);
+      const name = sanitize(req.body.name || '', 200);
+      const company = sanitize(req.body.company || '', 200);
 
-        // Step 2: Setup middleware after Redis is ready
-        const gptLimiter = await setupMiddleware();
+      if (!email || !isValidEmail(email)) {
+        return res.status(400).json({ error: 'A valid email address is required.' });
+      }
 
-        // Step 3: Setup routes (they can use Redis now)
-        setupRoutes(gptLimiter);
+      const sessionId = crypto.randomUUID();
 
-        // Step 4: Start the server
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
-            console.log(`📊 Assessment API: http://localhost:${PORT}/api/assessment`);
-            console.log(`📝 Session management: ${redisClient.isConnected ? 'Redis-backed' : 'Memory-based'}`);
-            console.log(`⚡ Caching: ${redisClient.isConnected ? 'Redis-enabled' : 'Memory-based'}`);
-        });
+      const sessionData = { email, name, company, startedAt: new Date().toISOString() };
+
+      // Cache in Redis
+      await redisClient.setJSON(`session:${sessionId}`, sessionData, 86400);
+
+      // Persist user to Supabase
+      if (supabaseClient.isConnected) {
+        try {
+          await supabaseClient.client
+            .from('users')
+            .upsert({
+              email,
+              first_name: name.split(' ')[0] || '',
+              last_name: name.split(' ').slice(1).join(' ') || '',
+              company,
+              created_at: new Date().toISOString()
+            }, { onConflict: 'email' });
+        } catch (e) {
+          console.warn('[supabase] user upsert failed:', e.message);
+        }
+      }
+
+      res.json({ success: true, sessionId });
     } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
+      console.error('[start] error:', error);
+      res.status(500).json({ error: 'Failed to start assessment.' });
     }
+  });
+
+  // ---- Submit assessment (server-side scoring) -----------------------------
+  app.post('/api/assessment/submit', async (req, res) => {
+    try {
+      const { sessionId, answers } = req.body;
+
+      if (!sessionId || typeof answers !== 'object') {
+        return res.status(400).json({ error: 'sessionId and answers are required.' });
+      }
+
+      // Retrieve session data
+      let session = await redisClient.getJSON(`session:${sessionId}`);
+      if (!session) {
+        // Allow submission even without a cached session (e.g. Redis was restarted)
+        session = { email: 'unknown', name: '', company: '' };
+      }
+
+      // --- Server-side scoring ---
+      const { overall, sections: sectionScores } = config.calculateScores(answers);
+      const readinessLevel = config.getReadinessLevel(overall);
+      const insights = config.generateInsights(sectionScores, overall);
+      const freeResponses = config.extractFreeResponses(answers);
+
+      const result = {
+        overall,
+        sections: sectionScores,
+        readinessLevel,
+        insights,
+        freeResponses
+      };
+
+      // Cache result
+      await redisClient.setJSON(`result:${sessionId}`, result, 86400);
+
+      // --- Persist to Supabase ---
+      let assessmentId = null;
+      if (supabaseClient.isConnected) {
+        try {
+          // Look up user
+          let userId = null;
+          if (session.email && session.email !== 'unknown') {
+            const { data: users } = await supabaseClient.client
+              .from('users')
+              .select('id')
+              .eq('email', session.email);
+            if (users && users.length > 0) userId = users[0].id;
+          }
+
+          const row = {
+            session_id: sessionId,
+            user_id: userId,
+            email: session.email,
+            answers,
+            score: overall,
+            section_scores: sectionScores,
+            status: 'completed',
+            completed_at: new Date().toISOString()
+          };
+
+          const saved = await supabaseClient.saveAssessment(row);
+          assessmentId = saved?.id || null;
+        } catch (e) {
+          console.warn('[supabase] assessment save failed:', e.message);
+        }
+      }
+
+      // --- HubSpot lead creation (optional) ---
+      if (hubspotClient.isConnected && session.email && session.email !== 'unknown') {
+        try {
+          const userInfo = {
+            email: session.email,
+            firstName: (session.name || '').split(' ')[0],
+            lastName: (session.name || '').split(' ').slice(1).join(' '),
+            company: session.company
+          };
+
+          let contact = await hubspotClient.getContactByEmail(session.email);
+
+          if (contact) {
+            await hubspotClient.updateContactAssessment(session.email, assessmentId, {
+              ai_readiness_score: overall.toString(),
+              last_assessment_date: new Date().toISOString().split('T')[0]
+            });
+          } else {
+            contact = await hubspotClient.createContactFromAssessment(
+              answers, userInfo, overall, sectionScores
+            );
+          }
+
+          if (contact) {
+            const stage = overall >= 70 ? 'qualified' : 'unqualified';
+            await hubspotClient.createDealFromAssessment(
+              contact.id, answers, overall, userInfo, stage
+            );
+
+            const keyInsights = generateHubSpotInsights(sectionScores, overall);
+            await hubspotClient.addAssessmentNote(contact.id, overall, keyInsights, freeResponses);
+          }
+        } catch (e) {
+          console.warn('[hubspot] integration failed:', e.message);
+        }
+      }
+
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error('[submit] error:', error);
+      res.status(500).json({ error: 'Failed to score assessment.' });
+    }
+  });
+
+  // ---- SPA catch-all -------------------------------------------------------
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'client', 'index.html'));
+  });
+
+  // ---- Error handler -------------------------------------------------------
+  app.use((err, _req, res, _next) => {
+    console.error('[error]', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  });
 }
 
-// Setup routes function
-function setupRoutes(gptLimiter) {
-    // Assessment API routes with Supabase + Redis hybrid approach
-    app.post('/api/assessment/save', async (req, res) => {
-        try {
-            const { assessmentData, userInfo } = req.body;
-            const sessionId = req.sessionID;
-
-            // Save to Redis for fast access (temporary cache)
-            await redisClient.setJSON(`assessment:${sessionId}`, assessmentData, 3600);
-
-            // Also save/update in Supabase for persistence
-            if (supabaseClient.isConnected) {
-                try {
-                    // Try to find existing assessment
-                    const existingAssessment = await supabaseClient.client
-                        .from('assessments')
-                        .select('id')
-                        .eq('session_id', sessionId)
-                        .single();
-
-                    if (existingAssessment.data) {
-                        // Update existing
-                        await supabaseClient.updateAssessment(existingAssessment.data.id, {
-                            answers: assessmentData,
-                            updated_at: new Date().toISOString()
-                        });
-                    } else {
-                        // Create new
-                        await supabaseClient.saveAssessment({
-                            session_id: sessionId,
-                            answers: assessmentData,
-                            email: userInfo?.email,
-                            industry: userInfo?.industry,
-                            company_size: userInfo?.companySize,
-                            status: 'in_progress'
-                        });
-                    }
-                } catch (supabaseError) {
-                    console.warn('Supabase save failed, continuing with Redis only:', supabaseError.message);
-                }
-            }
-
-            res.json({ success: true, sessionId });
-        } catch (error) {
-            console.error('Assessment save error:', error);
-            res.status(500).json({ error: 'Failed to save assessment' });
-        }
-    });
-
-    app.get('/api/assessment/load/:sessionId?', async (req, res) => {
-        try {
-            const sessionId = req.params.sessionId || req.sessionID;
-
-            // Try Redis first (fastest)
-            let assessmentData = await redisClient.getJSON(`assessment:${sessionId}`);
-
-            // If not in Redis, try Supabase
-            if (!assessmentData && supabaseClient.isConnected) {
-                try {
-                    const supabaseData = await supabaseClient.client
-                        .from('assessments')
-                        .select('answers, status')
-                        .eq('session_id', sessionId)
-                        .single();
-
-                    if (supabaseData.data) {
-                        assessmentData = supabaseData.data.answers;
-                        // Re-cache in Redis for future requests
-                        await redisClient.setJSON(`assessment:${sessionId}`, assessmentData, 3600);
-                    }
-                } catch (supabaseError) {
-                    console.warn('Supabase load failed:', supabaseError.message);
-                }
-            }
-
-            res.json({ assessmentData: assessmentData || null });
-        } catch (error) {
-            console.error('Assessment load error:', error);
-            res.status(500).json({ error: 'Failed to load assessment' });
-        }
-    });
-
-    app.post('/api/assessment/complete', async (req, res) => {
-        try {
-            const { assessmentData, userInfo, score, sectionScores } = req.body;
-            const sessionId = req.sessionID;
-
-            // Cache completed assessment in Redis
-            const completedData = {
-                assessmentData,
-                userInfo,
-                score,
-                sectionScores,
-                completedAt: new Date().toISOString()
-            };
-            await redisClient.setJSON(`completed:${sessionId}`, completedData, 86400);
-
-            let assessmentId = null;
-
-            // Save to Supabase for permanent storage
-            if (supabaseClient.isConnected) {
-                try {
-                    // Find existing assessment or create new
-                    const existingAssessment = await supabaseClient.client
-                        .from('assessments')
-                        .select('id')
-                        .eq('session_id', sessionId)
-                        .single();
-
-                    const updateData = {
-                        answers: assessmentData,
-                        score: score,
-                        section_scores: sectionScores,
-                        email: userInfo?.email,
-                        industry: userInfo?.industry,
-                        company_size: userInfo?.companySize,
-                        status: 'completed',
-                        completed_at: new Date().toISOString()
-                    };
-
-                    if (existingAssessment.data) {
-                        const updated = await supabaseClient.updateAssessment(existingAssessment.data.id, updateData);
-                        assessmentId = existingAssessment.data.id;
-                    } else {
-                        const created = await supabaseClient.saveAssessment({
-                            session_id: sessionId,
-                            ...updateData
-                        });
-                        assessmentId = created?.id;
-                    }
-                } catch (supabaseError) {
-                    console.warn('Supabase completion save failed:', supabaseError.message);
-                }
-            }
-
-            // Create HubSpot lead if email provided and HubSpot connected
-            let hubspotContact = null;
-            let hubspotDeal = null;
-
-            if (hubspotClient.isConnected && userInfo?.email) {
-                try {
-                    // Check if contact already exists
-                    const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
-
-                    if (existingContact) {
-                        // Update existing contact with new assessment data
-                        hubspotContact = await hubspotClient.updateContactAssessment(
-                            userInfo.email,
-                            assessmentId,
-                            {
-                                ai_readiness_score: score.toString(),
-                                last_assessment_date: new Date().toISOString().split('T')[0]
-                            }
-                        );
-                        console.log('📊 Updated existing HubSpot contact');
-                    } else {
-                        // Create new contact
-                        hubspotContact = await hubspotClient.createContactFromAssessment(
-                            assessmentData,
-                            userInfo,
-                            score,
-                            sectionScores
-                        );
-                        console.log('🎯 Created new HubSpot contact');
-                    }
-
-                    // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
-                    if (hubspotContact) {
-                        const dealStage = score >= 70 ? 'qualified' : 'unqualified';
-                        hubspotDeal = await hubspotClient.createDealFromAssessment(
-                            hubspotContact.id,
-                            assessmentData,
-                            score,
-                            userInfo,
-                            dealStage
-                        );
-
-                        if (hubspotDeal) {
-                            const dealType = score >= 70 ? 'qualified' : 'unqualified';
-                            console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
-                        }
-                    }
-
-                    // Add assessment insights as note with free responses
-                    if (hubspotContact) {
-                        const keyInsights = generateKeyInsights(sectionScores, score);
-                        // Extract free responses from assessment data
-                        const freeResponses = assessmentData?.freeResponses || {};
-                        await hubspotClient.addAssessmentNote(hubspotContact.id, score, keyInsights, freeResponses);
-                    }
-
-                } catch (hubspotError) {
-                    console.warn('HubSpot integration failed:', hubspotError.message);
-                }
-            }
-
-            res.json({
-                success: true,
-                sessionId,
-                score,
-                sectionScores,
-                hubspot: {
-                    contactCreated: !!hubspotContact,
-                    dealCreated: !!hubspotDeal,
-                    contactId: hubspotContact?.id
-                }
-            });
-        } catch (error) {
-            console.error('Assessment completion error:', error);
-            res.status(500).json({ error: 'Failed to complete assessment' });
-        }
-    });
-
-    // Questions API using Supabase
-    app.get('/api/questions', async (req, res) => {
-        try {
-            const { industry, role } = req.query;
-
-            // Check Redis cache first
-            const cacheKey = `questions:${industry || 'all'}:${role || 'all'}`;
-            let questions = await redisClient.getJSON(cacheKey);
-
-            if (!questions && supabaseClient.isConnected) {
-                // Load from Supabase
-                questions = await supabaseClient.getQuestions({ industry, role });
-
-                if (questions) {
-                    // Cache for 30 minutes
-                    await redisClient.setJSON(cacheKey, questions, 1800);
-                }
-            }
-
-            // Fallback to JSON files
-            if (!questions) {
-                const fs = require('fs');
-                const path = require('path');
-                try {
-                    const coreQuestions = JSON.parse(fs.readFileSync(path.join(__dirname, 'coreQuestions.json'), 'utf8'));
-                    questions = coreQuestions.sections || [];
-                    await redisClient.setJSON(cacheKey, questions, 1800);
-                } catch (fileError) {
-                    console.warn('Failed to load questions from file:', fileError.message);
-                }
-            }
-
-            res.json({ questions: questions || [] });
-        } catch (error) {
-            console.error('Questions API error:', error);
-            res.status(500).json({ error: 'Failed to load questions' });
-        }
-    });
-
-    // Benchmarks API with Supabase + file fallback
-    app.get('/api/benchmarks', async (req, res) => {
-        try {
-            const { industry, companySize } = req.query;
-
-            // Check cache first
-            const cacheKey = `benchmarks:${industry || 'all'}:${companySize || 'all'}`;
-            let benchmarks = await redisClient.getJSON(cacheKey);
-
-            if (!benchmarks && supabaseClient.isConnected) {
-                // Load from Supabase
-                try {
-                    let query = supabaseClient.client.from('benchmarks').select('*');
-
-                    if (industry) {
-                        query = query.eq('industry', industry);
-                    }
-                    if (companySize) {
-                        query = query.eq('company_size', companySize);
-                    }
-
-                    const { data, error } = await query;
-                    if (!error && data) {
-                        benchmarks = data;
-                        await redisClient.setJSON(cacheKey, benchmarks, 3600);
-                    }
-                } catch (supabaseError) {
-                    console.warn('Supabase benchmarks load failed:', supabaseError.message);
-                }
-            }
-
-            // Fallback to file
-            if (!benchmarks) {
-                const fs = require('fs');
-                const path = require('path');
-                const benchmarksPath = path.join(__dirname, 'client/benchmarks.js');
-
-                if (fs.existsSync(benchmarksPath)) {
-                    delete require.cache[require.resolve('./client/benchmarks.js')];
-                    const benchmarksModule = require('./client/benchmarks.js');
-                    benchmarks = typeof benchmarksModule === 'function' ? benchmarksModule() : benchmarksModule;
-
-                    await redisClient.setJSON(cacheKey, benchmarks, 3600);
-                }
-            }
-
-            res.json({ benchmarks: benchmarks || [] });
-        } catch (error) {
-            console.error('Benchmarks API error:', error);
-            res.status(500).json({ error: 'Failed to load benchmarks' });
-        }
-    });
-
-    // Analytics API using Supabase
-    app.get('/api/analytics/overview', async (req, res) => {
-        try {
-            if (!supabaseClient.isConnected) {
-                return res.status(503).json({ error: 'Analytics unavailable - database not connected' });
-            }
-
-            // Check cache first
-            const cachedAnalytics = await redisClient.getJSON('analytics:overview');
-            if (cachedAnalytics) {
-                return res.json(cachedAnalytics);
-            }
-
-            // Get assessment statistics
-            const stats = await supabaseClient.getAssessmentStats();
-
-            if (stats) {
-                const analytics = {
-                    totalAssessments: stats.length,
-                    averageScore: stats.reduce((sum, a) => sum + (a.score || 0), 0) / stats.length || 0,
-                    industryBreakdown: {},
-                    companySizeBreakdown: {},
-                    completionTrend: [],
-                    lastUpdated: new Date().toISOString()
-                };
-
-                // Process industry breakdown
-                stats.forEach(assessment => {
-                    if (assessment.industry) {
-                        analytics.industryBreakdown[assessment.industry] =
-                            (analytics.industryBreakdown[assessment.industry] || 0) + 1;
-                    }
-                    if (assessment.company_size) {
-                        analytics.companySizeBreakdown[assessment.company_size] =
-                            (analytics.companySizeBreakdown[assessment.company_size] || 0) + 1;
-                    }
-                });
-
-                // Cache for 15 minutes
-                await redisClient.setJSON('analytics:overview', analytics, 900);
-                res.json(analytics);
-            } else {
-                res.status(500).json({ error: 'Failed to fetch analytics' });
-            }
-        } catch (error) {
-            console.error('Analytics API error:', error);
-            res.status(500).json({ error: 'Failed to load analytics' });
-        }
-    });
-
-    // Health check
-    app.get('/health', (req, res) => {
-        res.json({
-            status: 'OK',
-            timestamp: new Date().toISOString(),
-            redis: redisClient.isConnected,
-            supabase: supabaseClient.isConnected,
-            hubspot: hubspotClient.isConnected,
-            services: {
-                cache: redisClient.isConnected ? 'healthy' : 'unavailable',
-                database: supabaseClient.isConnected ? 'healthy' : 'unavailable',
-                crm: hubspotClient.isConnected ? 'healthy' : 'unavailable'
-            }
-        });
-    });
-
-    // User registration endpoint
-    app.post('/api/users', async (req, res) => {
-        try {
-            const { firstName, lastName, email, industry, jobTitle, role, orgSize, consentMarketing } = req.body;
-            const sessionId = req.sessionID;
-
-            const userData = {
-                first_name: firstName,
-                last_name: lastName,
-                email,
-                industry,
-                job_title: jobTitle,
-                company: req.body.company || '',
-                company_size: orgSize,
-                phone: req.body.phone || '',
-                created_at: new Date().toISOString()
-            };
-
-            // Save to Redis for session (including extra fields for session)
-            const sessionData = {
-                ...userData,
-                role,
-                consent_marketing: consentMarketing,
-                session_id: sessionId
-            };
-            await redisClient.setJSON(`user:${sessionId}`, sessionData, 86400);
-
-            // Save to Supabase for persistence
-            if (supabaseClient.isConnected) {
-                try {
-                    await supabaseClient.client
-                        .from('users')
-                        .upsert(userData, { onConflict: 'email' });
-                } catch (supabaseError) {
-                    console.warn('Supabase user save failed:', supabaseError.message);
-                }
-            }
-
-            res.json({ success: true, sessionId });
-        } catch (error) {
-            console.error('User registration error:', error);
-            res.status(500).json({ error: 'Failed to save user data' });
-        }
-    });
-
-    // Results collection endpoint
-    app.post('/api/results', async (req, res) => {
-        try {
-            const resultsData = req.body;
-            const sessionId = req.sessionID;
-
-            // Transform frontend data format to backend format
-            const assessmentData = {
-                freeResponses: resultsData.freeResponses || {},
-                allAnswers: resultsData.allAnswers || {},
-                timestamp: resultsData.timestamp
-            };
-
-            const userInfo = resultsData.user || {};
-            const score = resultsData.scores?.overall || 0;
-            const sectionScores = {
-                strategy: resultsData.scores?.strategy || 0,
-                operations: resultsData.scores?.operations || 0,
-                technology: resultsData.scores?.technology || 0,
-                data: resultsData.scores?.data || 0,
-                culture: resultsData.scores?.culture || 0,
-                governance: resultsData.scores?.automation || 0 // Map automation to governance
-            };
-
-            console.log('📊 Processing results with free responses:', Object.keys(assessmentData.freeResponses));
-
-            // Call the existing assessment completion logic directly
-            const completedData = {
-                assessmentData,
-                userInfo,
-                score,
-                sectionScores,
-                completedAt: new Date().toISOString()
-            };
-
-            // Cache completed assessment in Redis
-            await redisClient.setJSON(`completed:${sessionId}`, completedData, 86400);
-
-            let assessmentId = null;
-            let userId = null;
-
-            // Create or get user first
-            if (supabaseClient.isConnected && userInfo?.email) {
-                try {
-                    // Check if user exists
-                    const { data: existingUsers } = await supabaseClient.client
-                        .from('users')
-                        .select('id')
-                        .eq('email', userInfo.email);
-
-                    if (existingUsers && existingUsers.length > 0) {
-                        userId = existingUsers[0].id;
-                        console.log('📋 Found existing user:', userId);
-                    } else {
-                        // Create new user
-                        const newUserData = {
-                            email: userInfo.email,
-                            first_name: userInfo.firstName || '',
-                            last_name: userInfo.lastName || '',
-                            company: userInfo.company || '',
-                            job_title: userInfo.jobTitle || '',
-                            industry: userInfo.industry || '',
-                            company_size: userInfo.companySize || '',
-                            created_at: new Date().toISOString()
-                        };
-
-                        const { data: newUser } = await supabaseClient.client
-                            .from('users')
-                            .insert(newUserData)
-                            .select('id')
-                            .single();
-
-                        userId = newUser?.id;
-                        console.log('👤 Created new user:', userId);
-                    }
-                } catch (userError) {
-                    console.warn('User creation/lookup failed:', userError.message);
-                }
-            }
-
-            // Save to Supabase for permanent storage
-            if (supabaseClient.isConnected) {
-                try {
-                    const supabaseData = {
-                        session_id: sessionId,
-                        user_id: userId,
-                        answers: assessmentData,
-                        score: score,
-                        section_scores: sectionScores,
-                        email: userInfo?.email,
-                        industry: userInfo?.industry,
-                        company_size: userInfo?.companySize,
-                        status: 'completed',
-                        completed_at: new Date().toISOString()
-                    };
-
-                    const created = await supabaseClient.saveAssessment(supabaseData);
-                    assessmentId = created?.id;
-                } catch (supabaseError) {
-                    console.warn('Supabase completion save failed:', supabaseError.message);
-                }
-            }
-
-            // Create HubSpot lead if email provided and HubSpot connected
-            let hubspotContact = null;
-            let hubspotDeal = null;
-
-            if (hubspotClient.isConnected && userInfo?.email) {
-                try {
-                    // Check if contact already exists
-                    const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
-
-                    if (existingContact) {
-                        hubspotContact = await hubspotClient.updateContactAssessment(
-                            userInfo.email,
-                            assessmentId,
-                            {
-                                ai_readiness_score: score.toString(),
-                                last_assessment_date: new Date().toISOString().split('T')[0]
-                            }
-                        );
-                        console.log('📊 Updated existing HubSpot contact');
-                    } else {
-                        hubspotContact = await hubspotClient.createContactFromAssessment(
-                            assessmentData,
-                            userInfo,
-                            score,
-                            sectionScores
-                        );
-                        console.log('🎯 Created new HubSpot contact');
-                    }
-
-                    // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
-                    if (hubspotContact) {
-                        const dealStage = score >= 70 ? 'qualified' : 'unqualified';
-                        hubspotDeal = await hubspotClient.createDealFromAssessment(
-                            hubspotContact.id,
-                            assessmentData,
-                            score,
-                            userInfo,
-                            dealStage
-                        );
-
-                        if (hubspotDeal) {
-                            const dealType = score >= 70 ? 'qualified' : 'unqualified';
-                            console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
-                        }
-                    }
-
-                    // Add assessment insights as note with free responses
-                    if (hubspotContact) {
-                        const keyInsights = generateKeyInsights(sectionScores, score);
-                        const freeResponses = assessmentData?.freeResponses || {};
-                        await hubspotClient.addAssessmentNote(hubspotContact.id, score, keyInsights, freeResponses);
-                    }
-
-                } catch (hubspotError) {
-                    console.warn('HubSpot integration failed:', hubspotError.message);
-                }
-            }
-
-            res.json({
-                success: true,
-                sessionId,
-                score,
-                sectionScores,
-                hubspot: {
-                    contactCreated: !!hubspotContact,
-                    dealCreated: !!hubspotDeal,
-                    contactId: hubspotContact?.id
-                }
-            });
-        } catch (error) {
-            console.error('Results collection error:', error);
-            res.status(500).json({ error: 'Failed to save results' });
-        }
-    });
-
-    // Error handling middleware
-    app.use((error, req, res, next) => {
-        console.error('Server Error:', error);
-        res.status(500).json({
-            error: 'Internal server error',
-            message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
-        });
-    });
-
-    // 404 handler
-    app.use('*', (req, res) => {
-        res.status(404).json({ error: 'Route not found' });
-    });
+// ---------------------------------------------------------------------------
+// HubSpot insight helper (mirrors legacy generateKeyInsights)
+// ---------------------------------------------------------------------------
+function generateHubSpotInsights(sectionScores, overallScore) {
+  const insights = [];
+
+  if (overallScore >= 80) {
+    insights.push('High AI readiness - excellent candidate for advanced AI implementation');
+  } else if (overallScore >= 60) {
+    insights.push('Moderate AI readiness - good foundation with areas for improvement');
+  } else {
+    insights.push('Early AI readiness stage - significant opportunity for consulting engagement');
+  }
+
+  const thresholds = {
+    strategy: 70, operations: 65, technology: 65,
+    data: 75, culture: 70, automation: 60
+  };
+
+  for (const [key, data] of Object.entries(sectionScores)) {
+    const t = thresholds[key] || 65;
+    if (data.score >= t) {
+      insights.push(`Strong ${data.title} foundation (${data.score}/100)`);
+    } else {
+      insights.push(`${data.title} needs development (${data.score}/100) - consulting opportunity`);
+    }
+  }
+
+  return insights;
 }
 
-startServer();
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+async function start() {
+  try {
+    await initConnections();
+    setupMiddleware();
+    setupRoutes();
+    app.listen(PORT, () => {
+      console.log(`[server] listening on :${PORT}`);
+    });
+  } catch (error) {
+    console.error('[fatal]', error);
+    process.exit(1);
+  }
+}
+
+start();
 
 module.exports = app;
