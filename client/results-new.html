@@ -269,6 +269,13 @@
             transform: translateY(-1px);
         }
         
+        @media print {
+            header, footer, .no-print, .modal-overlay, .unlock-btn { display: none !important; }
+            body { background: #fff; }
+            .shadow-lg { box-shadow: none !important; border: 1px solid #e5e7eb; }
+            section, .insight-card { break-inside: avoid; }
+            main { padding-top: 0 !important; }
+        }
         .pulse {
             animation: pulse 2s infinite;
         }
@@ -294,8 +301,11 @@
                         <div class="text-xl font-bold text-gray-900">VossAIConsulting</div>
                         <div class="text-xs text-gray-500 -mt-1">AI Readiness Results</div>
                     </div>
-                </div>
-                <div class="flex items-center space-x-4">
+                </a>
+                <div class="flex items-center space-x-4 no-print">
+                    <button type="button" id="downloadReport" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
+                        ⤓ Download PDF
+                    </button>
                     <a href="index.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
                         ↻ Retake Assessment
                     </a>
@@ -374,10 +384,99 @@
                                 <h4 class="text-sm font-medium text-indigo-800 mb-1">Automation</h4>
                                 <p class="text-2xl font-bold text-indigo-900" id="automationScore">🔒</p>
                             </div>
+                            <div class="score-card bg-gray-100 col-span-2">
+                                <h4 class="text-sm font-medium text-gray-800 mb-1">Governance &amp; Data Protection</h4>
+                                <p class="text-2xl font-bold text-gray-900" id="governanceScore">0%</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- AI Executive Report -->
+                <section id="aiReportSection" class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <div class="flex flex-wrap items-center justify-between mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-800">Your AI Executive Report</h2>
+                        <span id="aiReportSource" class="text-xs font-medium text-gray-500"></span>
+                    </div>
+                    <p id="aiReportLoading" class="text-gray-600" role="status">
+                        <span class="pulse">Analyzing your answers and building your personalized report…</span>
+                    </p>
+                    <div id="aiReportBody" class="hidden">
+                        <p id="aiExecutiveSummary" class="text-lg text-gray-900 mb-4"></p>
+                        <p id="aiNarrative" class="text-gray-700 mb-6"></p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-semibold text-green-800 mb-3">Strengths to build on</h3>
+                                <ul id="aiStrengths" class="space-y-3"></ul>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-red-800 mb-3">Gaps to close</h3>
+                                <ul id="aiGaps" class="space-y-3"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Use Cases -->
+                <section id="useCaseSection" class="bg-white rounded-lg shadow-lg p-8 mb-8 hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Top AI Use Cases for Your Organization</h2>
+                    <p class="text-gray-600 mb-6">Ordered by how quickly each one can start saving time.</p>
+                    <div id="useCases" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+                </section>
+
+                <!-- ROI & Time Savings -->
+                <section id="roiSection" class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Your AI Time &amp; Value Estimate</h2>
+                    <p class="text-gray-600 mb-6">Adjust the inputs to match your organization. Estimates update as you type.</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <form id="roiForm" class="space-y-5" onsubmit="return false;">
+                            <label class="block">
+                                <span class="text-sm font-medium text-gray-700">Employees</span>
+                                <input type="number" id="roiEmployees" min="1" step="1" class="mt-1 w-full p-2 border border-gray-300 rounded-lg">
+                            </label>
+                            <label class="block">
+                                <span class="text-sm font-medium text-gray-700">Average fully loaded hourly cost ($)</span>
+                                <input type="number" id="roiHourlyCost" min="1" step="1" class="mt-1 w-full p-2 border border-gray-300 rounded-lg">
+                            </label>
+                            <label class="block">
+                                <span class="text-sm font-medium text-gray-700">Hours per week each person spends on repetitive work: <strong id="roiHoursValue"></strong></span>
+                                <input type="range" id="roiHours" min="0" max="20" step="1" class="mt-2 w-full">
+                            </label>
+                            <label class="block">
+                                <span class="text-sm font-medium text-gray-700">Staff actively using AI in year one: <strong id="roiAdoptionValue"></strong></span>
+                                <input type="range" id="roiAdoption" min="10" max="100" step="5" class="mt-2 w-full">
+                            </label>
+                        </form>
+                        <div>
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+                                <div class="score-card bg-blue-50">
+                                    <p class="text-2xl font-bold text-blue-900" id="roiWeeklyHours">0</p>
+                                    <p class="text-xs text-blue-800">hours recovered / week</p>
+                                </div>
+                                <div class="score-card bg-green-50">
+                                    <p class="text-2xl font-bold text-green-900" id="roiAnnualValue">$0</p>
+                                    <p class="text-xs text-green-800">annual value</p>
+                                </div>
+                                <div class="score-card bg-purple-50">
+                                    <p class="text-2xl font-bold text-purple-900" id="roiFte">0</p>
+                                    <p class="text-xs text-purple-800">FTEs of capacity</p>
+                                </div>
+                            </div>
+                            <div id="roiUnlockCallout" class="bg-yellow-50 border-l-4 border-yellow-400 rounded p-4 mb-4">
+                                <p class="text-gray-800">
+                                    Raising your readiness to <strong id="roiTargetReadiness">80</strong> could unlock about
+                                    <strong id="roiUnlockable">$0</strong> more per year.
+                                    <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="text-blue-600 hover:text-blue-800 underline no-print">Talk through a plan</a>
+                                </p>
+                            </div>
+                            <details class="text-sm text-gray-600">
+                                <summary class="cursor-pointer font-medium">How we estimate this</summary>
+                                <ul id="roiAssumptions" class="list-disc ml-5 mt-2 space-y-1"></ul>
+                            </details>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Dynamic Insights -->
                 <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
                     <h2 class="text-2xl font-semibold text-gray-800 mb-6">Personalized Insights</h2>
@@ -394,17 +493,24 @@
                     </div>
                 </div>
                 
+                <!-- Governance Guardrails -->
+                <section id="guardrailSection" class="bg-white rounded-lg shadow-lg p-8 mb-8 hidden">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Recommended AI Guardrails</h2>
+                    <p class="text-gray-600 mb-6">Policies that protect your clients' data as you adopt AI tools and agents.</p>
+                    <ul id="guardrails" class="space-y-3 text-gray-800"></ul>
+                </section>
+
                 <!-- Next Steps -->
-                <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 text-white text-center">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 text-white text-center no-print">
                     <h2 class="text-2xl font-semibold mb-4">Ready to Accelerate Your AI Journey?</h2>
                     <p class="text-lg mb-6">Get expert guidance tailored to your specific needs and industry</p>
                     <div class="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
                         <a href="https://calendly.com/robvoss-vossaiconsulting/30min" target="_blank" class="btn btn-primary">
                             Schedule Free Consultation
                         </a>
-                        <a href="index.html" class="btn bg-white text-blue-600 hover:bg-gray-100">
-                            Retake Assessment
-                        </a>
+                        <button type="button" onclick="window.print()" class="btn bg-white text-blue-600 hover:bg-gray-100">
+                            Download PDF Report
+                        </button>
                     </div>
                 </div>
                 
@@ -437,7 +543,7 @@
             
             <div style="margin-bottom: 24px; padding: 16px; background: #f3f4f6; border-radius: 12px; border-left: 4px solid #3b82f6;">
                 <p style="font-size: 14px; color: #374151; margin: 0;">
-                    🧠 <strong>Your brain craves completion</strong> - we've intentionally shown you only 67% of your AI potential to create that "unfinished" feeling that drives action.
+                    🧠 <strong>Your brain craves completion</strong> - we've intentionally shown you only 5 of your 7 readiness dimensions to create that "unfinished" feeling that drives action.
                 </p>
             </div>
             
@@ -522,6 +628,7 @@
         </div>
     </footer>
 
-    <script src="scripts/results.js"></script>
+    <script src="roi-calculator.js?v=1"></script>
+    <script src="scripts/results.js?v=2"></script>
 </body>
 </html>

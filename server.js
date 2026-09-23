@@ -11,6 +11,9 @@ const RateLimitRedisStore = require('rate-limit-redis').default;
 const redisClient = require('./utils/redis');
 const supabaseClient = require('./utils/supabase');
 const hubspotClient = require('./utils/hubspot');
+const llmRouter = require('./utils/llm');
+const { DIMENSIONS, generateReport, cacheKeyFor } = require('./utils/aiReport');
+const { scoreLead } = require('./utils/leadScoring');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +37,9 @@ async function initializeConnections() {
 
     console.log('🔄 Initializing HubSpot...');
     hubspotClient.initialize();
+
+    console.log('🔄 Initializing LLM providers...');
+    llmRouter.initialize();
 
     return { redisClient, supabaseClient };
 }
@@ -130,28 +136,84 @@ function generateKeyInsights(sectionScores, overallScore) {
         insights.push('Early AI readiness stage - significant opportunity for consulting engagement');
     }
 
-    // Section-specific insights
-    const sections = [
-        { key: 'strategy', name: 'AI Strategy', threshold: 70 },
-        { key: 'data', name: 'Data Infrastructure', threshold: 75 },
-        { key: 'technology', name: 'Technology', threshold: 65 },
-        { key: 'talent', name: 'AI Talent', threshold: 60 },
-        { key: 'culture', name: 'Culture', threshold: 70 },
-        { key: 'governance', name: 'Governance', threshold: 65 }
-    ];
-
-    sections.forEach(section => {
-        const score = sectionScores?.[section.key];
+    Object.entries(DIMENSIONS).forEach(([key, name]) => {
+        const score = sectionScores?.[key];
         if (score !== undefined) {
-            if (score >= section.threshold) {
-                insights.push(`Strong ${section.name} foundation (${score}/100)`);
+            if (score >= 60) {
+                insights.push(`Strong ${name} foundation (${score}/100)`);
             } else {
-                insights.push(`${section.name} needs development (${score}/100) - consulting opportunity`);
+                insights.push(`${name} needs development (${score}/100) - consulting opportunity`);
             }
         }
     });
 
     return insights;
+}
+
+// Map the client's score payload onto the seven readiness dimensions
+function normalizeSectionScores(scores = {}) {
+    const sectionScores = {};
+    Object.keys(DIMENSIONS).forEach(key => {
+        const value = Number(scores[key]);
+        if (Number.isFinite(value)) sectionScores[key] = Math.round(value);
+    });
+    return sectionScores;
+}
+
+const SUBMISSION_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/;
+
+// Create/update the HubSpot contact, deal, and notes for a completed assessment
+async function syncAssessmentToHubSpot({ assessmentData, userInfo, score, sectionScores, assessmentId }) {
+    if (!hubspotClient.isConnected || !userInfo?.email) {
+        return { contact: null, deal: null, lead: null };
+    }
+
+    const freeResponses = assessmentData?.freeResponses || {};
+    const lead = scoreLead({
+        overall: score,
+        orgSize: userInfo.orgSize || userInfo.companySize,
+        role: userInfo.role,
+        answers: assessmentData?.allAnswers || {},
+        freeResponses
+    });
+
+    let contact = null;
+    let deal = null;
+
+    try {
+        const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
+
+        if (existingContact) {
+            // Update returns the contact, so its id is available for the deal and notes
+            contact = await hubspotClient.updateContactAssessment(
+                userInfo.email,
+                assessmentId,
+                {
+                    ai_readiness_score: score.toString(),
+                    last_assessment_date: new Date().toISOString().split('T')[0]
+                }
+            );
+            console.log('📊 Updated existing HubSpot contact');
+        } else {
+            contact = await hubspotClient.createContactFromAssessment(assessmentData, userInfo, score, sectionScores);
+            console.log('🎯 Created new HubSpot contact');
+        }
+
+        if (contact) {
+            deal = await hubspotClient.createDealFromAssessment(contact.id, score, userInfo, lead);
+            if (deal) {
+                console.log(`💰 Created HubSpot deal (tier ${lead.tier}, priority ${lead.priority}, readiness ${score})`);
+            }
+
+            const keyInsights = generateKeyInsights(sectionScores, score);
+            keyInsights.unshift(`Lead priority ${lead.priority}/100 (Tier ${lead.tier}) - size ${lead.breakdown.sizeFit}, need ${lead.breakdown.need}, authority ${lead.breakdown.authority}, intent ${lead.breakdown.intent}`);
+            await hubspotClient.addAssessmentNote(contact.id, score, keyInsights, freeResponses);
+        }
+    } catch (hubspotError) {
+        console.warn('HubSpot integration failed:', hubspotError.message);
+    }
+
+    return { contact, deal, lead };
 }
 
 // Start server with Redis initialization
@@ -315,66 +377,9 @@ function setupRoutes(gptLimiter) {
                 }
             }
 
-            // Create HubSpot lead if email provided and HubSpot connected
-            let hubspotContact = null;
-            let hubspotDeal = null;
-
-            if (hubspotClient.isConnected && userInfo?.email) {
-                try {
-                    // Check if contact already exists
-                    const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
-
-                    if (existingContact) {
-                        // Update existing contact with new assessment data
-                        hubspotContact = await hubspotClient.updateContactAssessment(
-                            userInfo.email,
-                            assessmentId,
-                            {
-                                ai_readiness_score: score.toString(),
-                                last_assessment_date: new Date().toISOString().split('T')[0]
-                            }
-                        );
-                        console.log('📊 Updated existing HubSpot contact');
-                    } else {
-                        // Create new contact
-                        hubspotContact = await hubspotClient.createContactFromAssessment(
-                            assessmentData,
-                            userInfo,
-                            score,
-                            sectionScores
-                        );
-                        console.log('🎯 Created new HubSpot contact');
-                    }
-
-                    // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
-                    if (hubspotContact) {
-                        const dealStage = score >= 70 ? 'qualified' : 'unqualified';
-                        hubspotDeal = await hubspotClient.createDealFromAssessment(
-                            hubspotContact.id,
-                            assessmentData,
-                            score,
-                            userInfo,
-                            dealStage
-                        );
-
-                        if (hubspotDeal) {
-                            const dealType = score >= 70 ? 'qualified' : 'unqualified';
-                            console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
-                        }
-                    }
-
-                    // Add assessment insights as note with free responses
-                    if (hubspotContact) {
-                        const keyInsights = generateKeyInsights(sectionScores, score);
-                        // Extract free responses from assessment data
-                        const freeResponses = assessmentData?.freeResponses || {};
-                        await hubspotClient.addAssessmentNote(hubspotContact.id, score, keyInsights, freeResponses);
-                    }
-
-                } catch (hubspotError) {
-                    console.warn('HubSpot integration failed:', hubspotError.message);
-                }
-            }
+            const { contact: hubspotContact, deal: hubspotDeal } = await syncAssessmentToHubSpot({
+                assessmentData, userInfo, score, sectionScores, assessmentId
+            });
 
             res.json({
                 success: true,
@@ -543,10 +548,12 @@ function setupRoutes(gptLimiter) {
             redis: redisClient.isConnected,
             supabase: supabaseClient.isConnected,
             hubspot: hubspotClient.isConnected,
+            llm: llmRouter.status(),
             services: {
                 cache: redisClient.isConnected ? 'healthy' : 'unavailable',
                 database: supabaseClient.isConnected ? 'healthy' : 'unavailable',
-                crm: hubspotClient.isConnected ? 'healthy' : 'unavailable'
+                crm: hubspotClient.isConnected ? 'healthy' : 'unavailable',
+                ai: llmRouter.isConfigured ? 'healthy' : 'rules-only'
             }
         });
     });
@@ -596,11 +603,26 @@ function setupRoutes(gptLimiter) {
         }
     });
 
-    // Results collection endpoint
+    // Results collection endpoint (idempotent per submissionId)
     app.post('/api/results', async (req, res) => {
         try {
             const resultsData = req.body;
             const sessionId = req.sessionID;
+            const submissionId = SUBMISSION_ID_PATTERN.test(resultsData.submissionId || '')
+                ? resultsData.submissionId
+                : null;
+
+            // A retried or duplicated submission must not create a second record, deal, or note
+            if (submissionId) {
+                const existing = await redisClient.getJSON(`submission:${submissionId}`);
+                if (existing) {
+                    return res.status(existing.response ? 200 : 202).json({
+                        ...(existing.response || { success: true, processing: true }),
+                        duplicate: true
+                    });
+                }
+                await redisClient.setJSON(`submission:${submissionId}`, { processing: true }, 86400);
+            }
 
             // Transform frontend data format to backend format
             const assessmentData = {
@@ -609,30 +631,21 @@ function setupRoutes(gptLimiter) {
                 timestamp: resultsData.timestamp
             };
 
-            const userInfo = resultsData.user || {};
+            const userInfo = { ...(resultsData.user || {}) };
+            userInfo.companySize = userInfo.companySize || userInfo.orgSize || '';
             const score = resultsData.scores?.overall || 0;
-            const sectionScores = {
-                strategy: resultsData.scores?.strategy || 0,
-                operations: resultsData.scores?.operations || 0,
-                technology: resultsData.scores?.technology || 0,
-                data: resultsData.scores?.data || 0,
-                culture: resultsData.scores?.culture || 0,
-                governance: resultsData.scores?.automation || 0 // Map automation to governance
-            };
+            const sectionScores = normalizeSectionScores(resultsData.scores);
 
             console.log('📊 Processing results with free responses:', Object.keys(assessmentData.freeResponses));
 
-            // Call the existing assessment completion logic directly
-            const completedData = {
+            // Cache completed assessment in Redis
+            await redisClient.setJSON(`completed:${sessionId}`, {
                 assessmentData,
                 userInfo,
                 score,
                 sectionScores,
                 completedAt: new Date().toISOString()
-            };
-
-            // Cache completed assessment in Redis
-            await redisClient.setJSON(`completed:${sessionId}`, completedData, 86400);
+            }, 86400);
 
             let assessmentId = null;
             let userId = null;
@@ -640,7 +653,6 @@ function setupRoutes(gptLimiter) {
             // Create or get user first
             if (supabaseClient.isConnected && userInfo?.email) {
                 try {
-                    // Check if user exists
                     const { data: existingUsers } = await supabaseClient.client
                         .from('users')
                         .select('id')
@@ -648,28 +660,23 @@ function setupRoutes(gptLimiter) {
 
                     if (existingUsers && existingUsers.length > 0) {
                         userId = existingUsers[0].id;
-                        console.log('📋 Found existing user:', userId);
                     } else {
-                        // Create new user
-                        const newUserData = {
-                            email: userInfo.email,
-                            first_name: userInfo.firstName || '',
-                            last_name: userInfo.lastName || '',
-                            company: userInfo.company || '',
-                            job_title: userInfo.jobTitle || '',
-                            industry: userInfo.industry || '',
-                            company_size: userInfo.companySize || '',
-                            created_at: new Date().toISOString()
-                        };
-
                         const { data: newUser } = await supabaseClient.client
                             .from('users')
-                            .insert(newUserData)
+                            .insert({
+                                email: userInfo.email,
+                                first_name: userInfo.firstName || '',
+                                last_name: userInfo.lastName || '',
+                                company: userInfo.company || '',
+                                job_title: userInfo.jobTitle || '',
+                                industry: userInfo.industry || '',
+                                company_size: userInfo.companySize,
+                                created_at: new Date().toISOString()
+                            })
                             .select('id')
                             .single();
 
                         userId = newUser?.id;
-                        console.log('👤 Created new user:', userId);
                     }
                 } catch (userError) {
                     console.warn('User creation/lookup failed:', userError.message);
@@ -679,7 +686,7 @@ function setupRoutes(gptLimiter) {
             // Save to Supabase for permanent storage
             if (supabaseClient.isConnected) {
                 try {
-                    const supabaseData = {
+                    const created = await supabaseClient.saveAssessment({
                         session_id: sessionId,
                         user_id: userId,
                         answers: assessmentData,
@@ -687,90 +694,90 @@ function setupRoutes(gptLimiter) {
                         section_scores: sectionScores,
                         email: userInfo?.email,
                         industry: userInfo?.industry,
-                        company_size: userInfo?.companySize,
+                        company_size: userInfo.companySize,
                         status: 'completed',
                         completed_at: new Date().toISOString()
-                    };
-
-                    const created = await supabaseClient.saveAssessment(supabaseData);
+                    });
                     assessmentId = created?.id;
                 } catch (supabaseError) {
                     console.warn('Supabase completion save failed:', supabaseError.message);
                 }
             }
 
-            // Create HubSpot lead if email provided and HubSpot connected
-            let hubspotContact = null;
-            let hubspotDeal = null;
+            const { contact, deal, lead } = await syncAssessmentToHubSpot({
+                assessmentData, userInfo, score, sectionScores, assessmentId
+            });
 
-            if (hubspotClient.isConnected && userInfo?.email) {
-                try {
-                    // Check if contact already exists
-                    const existingContact = await hubspotClient.getContactByEmail(userInfo.email);
-
-                    if (existingContact) {
-                        hubspotContact = await hubspotClient.updateContactAssessment(
-                            userInfo.email,
-                            assessmentId,
-                            {
-                                ai_readiness_score: score.toString(),
-                                last_assessment_date: new Date().toISOString().split('T')[0]
-                            }
-                        );
-                        console.log('📊 Updated existing HubSpot contact');
-                    } else {
-                        hubspotContact = await hubspotClient.createContactFromAssessment(
-                            assessmentData,
-                            userInfo,
-                            score,
-                            sectionScores
-                        );
-                        console.log('🎯 Created new HubSpot contact');
-                    }
-
-                    // Create deal for all assessments (qualified deals for scores >= 70, unqualified for others)
-                    if (hubspotContact) {
-                        const dealStage = score >= 70 ? 'qualified' : 'unqualified';
-                        hubspotDeal = await hubspotClient.createDealFromAssessment(
-                            hubspotContact.id,
-                            assessmentData,
-                            score,
-                            userInfo,
-                            dealStage
-                        );
-
-                        if (hubspotDeal) {
-                            const dealType = score >= 70 ? 'qualified' : 'unqualified';
-                            console.log(`💰 Created HubSpot ${dealType} deal (score: ${score})`);
-                        }
-                    }
-
-                    // Add assessment insights as note with free responses
-                    if (hubspotContact) {
-                        const keyInsights = generateKeyInsights(sectionScores, score);
-                        const freeResponses = assessmentData?.freeResponses || {};
-                        await hubspotClient.addAssessmentNote(hubspotContact.id, score, keyInsights, freeResponses);
-                    }
-
-                } catch (hubspotError) {
-                    console.warn('HubSpot integration failed:', hubspotError.message);
-                }
-            }
-
-            res.json({
+            const response = {
                 success: true,
                 sessionId,
                 score,
                 sectionScores,
                 hubspot: {
-                    contactCreated: !!hubspotContact,
-                    dealCreated: !!hubspotDeal,
-                    contactId: hubspotContact?.id
+                    contactCreated: !!contact,
+                    dealCreated: !!deal,
+                    contactId: contact?.id
                 }
-            });
+            };
+
+            if (submissionId) {
+                await redisClient.setJSON(`submission:${submissionId}`, {
+                    response,
+                    contactId: contact?.id || null,
+                    lead,
+                    briefSent: false
+                }, 86400);
+            }
+
+            res.json(response);
         } catch (error) {
             console.error('Results collection error:', error);
             res.status(500).json({ error: 'Failed to save results' });
+        }
+    });
+
+    // AI-personalized report (Claude Opus 5.5 → GPT-6 Astra → rule-based fallback)
+    app.post('/api/report', gptLimiter, async (req, res) => {
+        try {
+            const { submissionId, scores, profile, freeResponses, roiInputs } = req.body || {};
+            const reportInput = { scores, profile, freeResponses, roiInputs };
+
+            const cacheKey = cacheKeyFor(reportInput);
+            let result = await redisClient.getJSON(cacheKey);
+
+            if (!result) {
+                result = await generateReport(reportInput);
+                // Rule-based output is cheap to rebuild; only cache model output for a day
+                if (result.source.provider !== 'rules') {
+                    await redisClient.setJSON(cacheKey, result, 86400);
+                }
+            }
+
+            // The consultant brief is internal: route it to HubSpot, never to the browser
+            const { consultant_brief: brief, ...clientReport } = result.report;
+
+            if (SUBMISSION_ID_PATTERN.test(submissionId || '') && hubspotClient.isConnected) {
+                const submission = await redisClient.getJSON(`submission:${submissionId}`);
+                if (submission?.contactId && submission.lead && !submission.briefSent && brief) {
+                    await hubspotClient.addConsultantBriefNote(submission.contactId, {
+                        brief,
+                        lead: submission.lead,
+                        roi: result.roi,
+                        source: result.source
+                    });
+                    await redisClient.setJSON(`submission:${submissionId}`, { ...submission, briefSent: true }, 86400);
+                }
+            }
+
+            res.json({
+                report: clientReport,
+                roi: result.roi,
+                overall: result.overall,
+                source: result.source
+            });
+        } catch (error) {
+            console.error('Report generation error:', error);
+            res.status(500).json({ error: 'Failed to generate report' });
         }
     });
 

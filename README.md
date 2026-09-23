@@ -12,10 +12,23 @@ A comprehensive AI readiness assessment tool with enterprise-grade features incl
 - **📊 Analytics**: Real-time assessment statistics and benchmarking
 - **🔒 Security**: Rate limiting, input validation, and secure session management
 
+## 🤖 AI Executive Reports (Claude Opus 5.5 + GPT-6 Astra)
+
+After the assessment, `POST /api/report` builds a personalized report: an executive summary, strengths and gaps, three industry-specific use cases with hours saved, a 30/60/90-day roadmap, and governance guardrails.
+
+- **Models:** Claude Opus 5.5 (`claude-opus-5-5`) first, GPT-6 Astra (`gpt-6-astra`) as automatic failover, then a rule-based report so the page never breaks. Configure with `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and `LLM_PROVIDER_ORDER`.
+- **Structured output:** both providers return the same JSON schema (`utils/aiReport.js`), so the UI doesn't care which model answered.
+- **Client-data protection:** only industry, role level, org size, scores, and free-text answers go to the model. Names, emails, and company names never leave the server.
+- **Consultant brief:** the model also writes an internal sales brief (recommended engagement, talking points, objections). It's added to the HubSpot contact as a note and stripped from the browser response.
+- **ROI estimator:** `client/roi-calculator.js` is shared by the results page and the server. Visitors can adjust headcount, hourly cost, repetitive hours, and adoption.
+- **Lead scoring:** `utils/leadScoring.js` ranks consulting opportunity (size, gap, authority, intent) instead of readiness. `HUBSPOT_DEAL_THRESHOLD` sets the qualified cutoff.
+
+Run the unit tests with `npm test`. Node 22+ is required.
+
 ## 📋 Prerequisites
 
 - Docker and Docker Compose
-- Node.js 18+ (for local development)
+- Node.js 22+ (for local development)
 - Supabase account and project
 - HubSpot account with API access
 - Git

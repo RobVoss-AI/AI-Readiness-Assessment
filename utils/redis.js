@@ -118,12 +118,36 @@ class RedisClient {
         }
     }
 
+    // Small in-process fallback so caching and de-duplication still work without Redis
+    _memorySet(key, value, expireInSeconds) {
+        if (!this.memory) this.memory = new Map();
+        if (this.memory.size >= 1000) {
+            this.memory.delete(this.memory.keys().next().value);
+        }
+        this.memory.set(key, { value, expiresAt: Date.now() + expireInSeconds * 1000 });
+    }
+
+    _memoryGet(key) {
+        const entry = this.memory?.get(key);
+        if (!entry) return null;
+        if (entry.expiresAt < Date.now()) {
+            this.memory.delete(key);
+            return null;
+        }
+        return entry.value;
+    }
+
     async setJSON(key, obj, expireInSeconds = 3600) {
-        return await this.set(key, JSON.stringify(obj), expireInSeconds);
+        const value = JSON.stringify(obj);
+        if (!this.isConnected) {
+            this._memorySet(key, value, expireInSeconds);
+            return true;
+        }
+        return await this.set(key, value, expireInSeconds);
     }
 
     async getJSON(key) {
-        const value = await this.get(key);
+        const value = this.isConnected ? await this.get(key) : this._memoryGet(key);
         if (!value) return null;
         try {
             return JSON.parse(value);

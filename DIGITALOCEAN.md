@@ -312,7 +312,7 @@ Expected response:
 
 1. **Build Failures**:
    - Check Dockerfile syntax
-   - Verify all dependencies in backend.json
+   - Verify all dependencies in package.json
    - Review build logs in App Platform
 
 2. **Redis Connection Issues**:

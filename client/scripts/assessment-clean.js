@@ -95,6 +95,19 @@ const sections = [
             { id: 'auto_roi_measurement', text: 'We can measure and demonstrate ROI from automation initiatives' },
             { id: 'auto_open', text: 'What would be your ideal first automation project or AI use case?', type: 'textarea' }
         ]
+    },
+    {
+        id: 'governance',
+        title: 'AI Governance & Data Protection',
+        description: 'Assess how well you manage AI risk, client data, and AI agents',
+        questions: [
+            { id: 'gov_policy', text: 'We have a written AI acceptable-use policy that covers generative AI tools' },
+            { id: 'gov_approved_tools', text: 'We know which AI tools employees use and maintain an approved-tools list' },
+            { id: 'gov_client_data', text: 'We have clear rules that keep client, student, or confidential data out of public AI tools' },
+            { id: 'gov_human_review', text: 'A person reviews AI-generated work before it reaches clients or informs key decisions' },
+            { id: 'gov_agents', text: 'We define permissions and oversight before AI agents can take actions (send email, update records, make purchases)' },
+            { id: 'gov_open', text: 'What worries you most about AI risk, compliance, or protecting client data?', type: 'textarea' }
+        ]
     }
 ];
 
@@ -102,6 +115,7 @@ const sections = [
 answers = {};
 storage.setItem("voss_answers", "{}");
 storage.setItem("voss_scores", "{}");
+storage.setItem("voss_submission_id", "");
 
 // Select answer function
 function selectAnswer(questionId, value) {
@@ -305,6 +319,7 @@ document.getElementById('restartButton').addEventListener('click', function () {
         // Clear all stored data
         storage.setItem('voss_answers', '{}');
         storage.setItem('voss_scores', '{}');
+        storage.setItem('voss_submission_id', '');
 
         // Reset to first section
         currentSection = 0;
